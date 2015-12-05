@@ -77,7 +77,6 @@
       (when (and (> s 0) (< s 1) (> t 0))
         [s t ix iy]))))
 
-
 (defn closest-intersection [ray lines]
   (reduce
    (fn [[s-min t-min ix-min iy-min] line]
@@ -89,16 +88,45 @@
    [0 js/Number.POSITIVE_INFINITY (ray 2) (ray 3)]
    lines))
 
+(defn rotate [angle [x y] [sx sy]]
+  (let [a (q/cos angle)
+        b (- (q/sin angle))
+        c (- b)
+        d a
+        vx (- x sx)
+        vy (- y sy)
+        nx (+ (* a vx) (* b vy))
+        ny (+ (* c vx) (* d vy))]
+    [(+ sx nx) (+ sy ny)]))
+
 (defn impacts [[sx sy] lines intersections]
   (vec
    (concat
     (for [[x0 y0 x1 y1] lines]
-      (let [[_ _ ix iy] (closest-intersection [sx sy x0 y0] all-lines)]
+      (let [[px py] (rotate 0.0001 [x0 y0] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
         [ix iy]))
     (for [[x0 y0 x1 y1] lines]
-      (let [[_ _ ix iy] (closest-intersection [sx sy x1 y1] all-lines)]
+      (let [[px py] (rotate -0.0001 [x0 y0] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
         [ix iy]))
-    (for [[x y] intersections]
+        (for [[x0 y0 x1 y1] lines]
+      (let [[px py] (rotate 0.0001 [x1 y1] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
+        [ix iy]))
+    (for [[x0 y0 x1 y1] lines]
+      (let [[px py] (rotate -0.0001 [x1 y1] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
+        [ix iy]))
+    (for [[_ _ x0 y0] intersections]
+      (let [[px py] (rotate 0.0001 [x0 y0] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
+        [ix iy]))
+    (for [[_ _ x0 y0] intersections]
+      (let [[px py] (rotate -0.0001 [x0 y0] [sx sy])
+            [_ _ ix iy] (closest-intersection [sx sy px py] all-lines)]
+        [ix iy]))
+    (for [[x y] [[0 0] [0 500] [500 0] [500 500]]]
       (let [[_ _ ix iy] (closest-intersection [sx sy x y] all-lines)]
         [ix iy])))))
 
@@ -138,11 +166,14 @@
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
     (q/ellipse (sun 0) (sun 1) 10 10)
-    (doseq [[ix iy] sorted-impacts]
-      (q/line (sun 0) (sun 1) ix iy))
+    (doseq [i (range (count sorted-impacts))]
+      (let [[x0 y0] (sorted-impacts i)
+            [x1 y1] (sorted-impacts (mod (+ i 1) (count sorted-impacts)))]
+        (q/triangle (sun 0) (sun 1) x0 y0 x1 y1)))
+;;     (q/stroke 0 0 0)
+;;     (doseq [[ix iy] sorted-impacts]
+;;       (q/line (sun 0) (sun 1) ix iy))
     (q/stroke 0 0 0)
-    (doseq [[ix iy] (take 1 sorted-impacts)]
-      (q/line (sun 0) (sun 1) ix iy))
     (doseq [[x0 y0 x1 y1] edges]
       (q/line x0 y0 x1 y1))
     (q/stroke 0 255 0)
