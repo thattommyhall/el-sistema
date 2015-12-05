@@ -4,8 +4,8 @@
 
 (let [start (System/nanoTime)]
   (b/build "src"
-    {:main 'cc-practice.core
-     :output-to "out/cc_practice.js"
+    {:main 'el-sistema.core
+     :output-to "out/el_sistema.js"
      :output-dir "out"
      :verbose true})
   (println "... done. Elapsed" (/ (- (System/nanoTime) start) 1e9) "seconds"))

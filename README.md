@@ -1,4 +1,4 @@
-# cc-practice
+# el-sistema
 
 FIXME: Write a one-line description of your library/project.
 
@@ -28,7 +28,7 @@ To get source map support in the Node REPL:
     
 To start a browser REPL:
     
-1. Uncomment the following lines in src/cc_practice/core.cljs:
+1. Uncomment the following lines in src/el_sistema/core.cljs:
 ```clojure
 ;; (defonce conn
 ;;   (repl/connect "http://localhost:9000/repl"))

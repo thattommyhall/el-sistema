@@ -1,6 +1,6 @@
 (require '[cljs.build.api :as b])
 
 (b/watch "src"
-  {:main 'cc-practice.core
-   :output-to "out/cc_practice.js"
+  {:main 'el-sistema.core
+   :output-to "out/el_sistema.js"
    :output-dir "out"})
