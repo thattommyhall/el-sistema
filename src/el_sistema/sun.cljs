@@ -6,6 +6,8 @@
 
 (enable-console-print!)
 
+(def num_ids 10)
+
 (def lines
   (vec
    (for [i (range 10)]
@@ -155,11 +157,21 @@
   (vec
    (sort-by identity (fn [px py] (compare-by-angle centre px py)) points)))
 
+(defn angle-between [[sx sy] [_ ax ay] [_ bx by]]
+  (let [angle-a (js/Math.atan2 (- ay sy) (- ax sx))
+        angle-b (js/Math.atan2 (- by sy) (- bx sx))
+        diff (js/Math.abs (- angle-a angle-b))]
+  (min diff (- (* 2 js/Math.PI) diff))))
+
+(/ (angle-between [0 0] [nil 0 -0.1] [nil 0 0.1]) js/Math.PI)
+
 (defn draw []
   (let [sun [(q/mouse-x) (q/mouse-y)]
         impacts (impacts sun lines intersections)
-        sorted-impacts (sort-by-angle sun impacts)]
+        sorted-impacts (sort-by-angle sun impacts)
+        absorbs (make-array num-ids)]
     (println "drawing at" (q/current-frame-rate))
+    (println sorted-impacts)
     (q/background 255)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
@@ -167,17 +179,38 @@
       (let [[_ x0 y0] (sorted-impacts i)
             [_ x1 y1] (sorted-impacts (mod (+ i 1) (count sorted-impacts)))]
         (q/triangle (sun 0) (sun 1) x0 y0 x1 y1)))
-;;     (q/stroke 0 0 0)
-;;     (doseq [[ix iy] sorted-impacts]
-;;       (q/line (sun 0) (sun 1) ix iy))
+    (q/stroke 0 0 0)
+;;     (doseq [[id ix iy] sorted-impacts]
+;;       (when (== id 0)
+;;         (q/line (sun 0) (sun 1) ix iy)))
+    (doseq [i (range num_ids)]
+      (aset absorbs i 0))
+    (doseq [i (range (count sorted-impacts))]
+      (let [[id0 x0 y0] (sorted-impacts i)
+            [id1 x1 y1] (sorted-impacts (mod (+ i 1) (count sorted-impacts)))]
+        (when (and (>= id0 0) (== id0 id1))
+          (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun [id0 x0 y0] [id1 x1 y1]))))))
+    (println (for [i (range (count sorted-impacts))]
+      (let [[id0 x0 y0] (sorted-impacts i)
+            [id1 x1 y1] (sorted-impacts (mod (+ i 1) (count sorted-impacts)))]
+        (when (and (>= id0 0) (== id0 id1))
+          (angle-between sun [id0 x0 y0] [id1 x1 y1])))))
+    (println absorbs)
+    (doseq [[id x0 y0 x1 y1] lines]
+      (let [absorb (aget absorbs id)
+            brightness (* absorb (/ 10 js/Math.PI))]
+        (q/stroke 0 255 0)
+        (q/line x0 y0 x1 y1)
+        (q/stroke 0)
+        (q/fill 0)
+        (q/ellipse x0 y0 brightness brightness)
+        (q/ellipse x1 y1 brightness brightness)))
     (q/stroke 0 0 0)
     (doseq [[_ x0 y0 x1 y1] edges]
-      (q/line x0 y0 x1 y1))
-    (q/stroke 0 255 0)
-    (doseq [[_ x0 y0 x1 y1] lines]
       (q/line x0 y0 x1 y1))))
 
 (defn setup []
+  (q/smooth 8)
   (q/frame-rate 30)
   (q/color-mode :rgb))
 
