@@ -1,0 +1,9 @@
+{
+  "firebase": "el-sistema",
+  "public": "site",
+  "ignore": [
+    "firebase.json",
+    "**/.*",
+    "**/node_modules/**"
+  ]
+}
