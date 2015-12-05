@@ -1,10 +1,11 @@
 (ns el-sistema.core
   (:require [clojure.browser.repl :as repl]
             [matchbox.core :as m]
-            [quil.core :as q :include-macros true]
-            [el-sistema.sun])
+            [quil.core :as q :include-macros true]))
 
-            )
+
+(enable-console-print!)
+(println "TOM TEST ")
 
 ;; (defonce conn
 ;;   (repl/connect "http://localhost:9000/repl"))
@@ -50,30 +51,30 @@
               new-stack))
      (filter (comp not nil?) accum))))
 
-(defonce conn
-    (repl/connect "http://localhost:9000/repl"))
+;; (defonce conn
+;;   (repl/connect "http://localhost:9000/repl"))
 
-(enable-console-print!)
 
-(println "Hello world!")
 
-(def root (m/connect "https://el-sistema.firebaseio.com"))
 
-(m/auth-anon root)
 
-(m/listen-children
-  root [:users :mike :friends]
-  (fn [[event-type data]] (prn event-type data)))
+;; (def root (m/connect "https://el-sistema.firebaseio.com"))
 
-(def mikes-friends (m/get-in root [:users :mike :friends]))
-(m/reset! mikes-friends [{:name "Kid A"} {:name "Kid B"}])
-(m/conj! mikes-friends {:name "Jean"})
+;; (m/auth-anon root)
 
-(m/deref
-  mikes-friends
-  (fn [key value]
-    (m/reset-in! root [:users :mike :num-friends]
-                 (count value))))
+;; (m/listen-children
+;;   root [:users :mike :friends]
+;;   (fn [[event-type data]] (prn event-type data)))
+
+;; (def mikes-friends (m/get-in root [:users :mike :friends]))
+;; (m/reset! mikes-friends [{:name "Kid A"} {:name "Kid B"}])
+;; (m/conj! mikes-friends {:name "Jean"})
+
+;; (m/deref
+;;   mikes-friends
+;;   (fn [key value]
+;;     (m/reset-in! root [:users :mike :num-friends]
+;;                  (count value))))
 
 (def ruleset {\X "F-[[X]+X]+F[+FX]-X"
               \F "FF"})
@@ -101,7 +102,7 @@
 (def depth (atom 0))
 
 (defn draw []
-  (println segs)
+  ;; (println segs)
   (q/background 100)
   ;; (q/fill 0)
   (q/stroke-float 0)
@@ -110,7 +111,14 @@
       (q/line start stop)))
   (swap! depth inc))
 
+(defn setup []
+  (q/frame-rate 30)
+  ;; (q/color-mode :rgb)
+  )
+
+
 (q/defsketch hello
+  :setup setup
   :draw draw
   :host "tree"
   :size [600 400]
