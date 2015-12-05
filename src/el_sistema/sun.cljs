@@ -17,7 +17,42 @@
    [500 500 500 0]
    [500 0 0 0]])
 
-(defn intersection [[p0_x p0_y p1_x p1_y] [p2_x p2_y p3_x p3_y]]
+(def all-lines
+  (vec (concat lines edges)))
+
+(defn line-intersection [[p0_x p0_y p1_x p1_y] [p2_x p2_y p3_x p3_y]]
+  (let [s1_x (- p1_x p0_x)
+        s1_y (- p1_y p0_y)
+        s2_x (- p3_x p2_x)
+        s2_y (- p3_y p2_y)
+        d (+
+            (* (- s2_x) s1_y)
+            (* s1_x s2_y))
+        s (/
+           (+
+            (* (- s1_y) (- p0_x p2_x))
+            (* s1_x (- p0_y p2_y)))
+           d)
+        t (/
+           (+
+            (* s2_x (- p0_y p2_y))
+            (* (- s2_y) (- p0_x p2_x)))
+           d)]
+    (let [ix (+ p0_x (* t s1_x))
+          iy (+ p0_y (* t s1_y))]
+;;       (q/fill 0)
+;;       (q/text (goog.string/format "%.6f %.6f" s t) ix iy (+ ix 100) (+ iy 100))
+      (when (and (> s 0) (< s 1) (> t 0) (< t 1))
+        [s t ix iy]))))
+
+(def intersections
+  (vec
+   (filter identity
+    (for [line0 all-lines
+          line1 all-lines]
+      (line-intersection line0 line1)))))
+
+(defn ray-intersection [[p0_x p0_y p1_x p1_y] [p2_x p2_y p3_x p3_y]]
   (let [s1_x (- p1_x p0_x)
         s1_y (- p1_y p0_y)
         s2_x (- p3_x p2_x)
@@ -46,7 +81,7 @@
 (defn closest-intersection [ray lines]
   (reduce
    (fn [[s-min t-min ix-min iy-min] line]
-     (if-let [[s t ix iy] (intersection ray line)]
+     (if-let [[s t ix iy] (ray-intersection ray line)]
        (if (< t t-min)
          [s t ix iy]
          [s-min t-min ix-min iy-min])
@@ -55,7 +90,7 @@
    lines))
 
 (defn draw-ray [[sx sy] px py]
-  (let [[s t ix iy] (closest-intersection [sx sy px py] (vec (concat lines edges)))]
+  (let [[s t ix iy] (closest-intersection [sx sy px py] all-lines)]
     (q/line sx sy ix iy)))
 
 (defn draw []
@@ -68,6 +103,8 @@
     (doseq [[x0 y0 x1 y1] lines]
       (draw-ray sun x0 y0)
       (draw-ray sun x1 y1))
+    (doseq [[_ _ x y] intersections]
+      (draw-ray sun x y))
     (q/stroke 0 0 0)
     (doseq [[x0 y0 x1 y1] edges]
       (q/line x0 y0 x1 y1))
