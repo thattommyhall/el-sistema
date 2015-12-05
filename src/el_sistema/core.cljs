@@ -42,8 +42,20 @@
     (m/reset-in! root [:users :mike :num-friends]
                  (count value))))
 
-(def R {\X "F-[[X]+X]+F[+FX]-X"
-        \F "FF"})
+(def ruleset {\X "F-[[X]+X]+F[+FX]-X"
+              \F "FF"})
 
-(defn apply-rule [R phenotype]
-  (apply str (map R phenotype)))
+(defn mapchar [ruleset c]
+  (get ruleset c c))
+
+(defn apply-rule [ruleset [l [h & t :as r]]]
+  (if (empty? r)
+    [""
+     (apply str l)]
+    [(apply str [l (mapchar ruleset h)] )
+     (apply str t)]))
+
+(defn sequence-for [ruleset init]
+  (distinct (map (fn [[l r]]
+                   (apply str l r))
+                 (iterate (partial apply-rule ruleset) ["" init]))))
