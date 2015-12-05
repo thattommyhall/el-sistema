@@ -1,7 +1,8 @@
 (ns el-sistema.core
   (:require [clojure.browser.repl :as repl]
             [matchbox.core :as m]
-            [quil.core :as q :include-macros true])
+            [quil.core :as q :include-macros true]
+            [el-sistema.sun])
   )
 
 ;; (defonce conn

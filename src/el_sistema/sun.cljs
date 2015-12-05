@@ -89,23 +89,60 @@
    [0 js/Number.POSITIVE_INFINITY (ray 2) (ray 3)]
    lines))
 
-(defn draw-ray [[sx sy] px py]
-  (let [[s t ix iy] (closest-intersection [sx sy px py] all-lines)]
-    (q/line sx sy ix iy)))
+(defn impacts [[sx sy] lines intersections]
+  (vec
+   (concat
+    (for [[x0 y0 x1 y1] lines]
+      (let [[_ _ ix iy] (closest-intersection [sx sy x0 y0] all-lines)]
+        [ix iy]))
+    (for [[x0 y0 x1 y1] lines]
+      (let [[_ _ ix iy] (closest-intersection [sx sy x1 y1] all-lines)]
+        [ix iy]))
+    (for [[x y] intersections]
+      (let [[_ _ ix iy] (closest-intersection [sx sy x y] all-lines)]
+        [ix iy])))))
+
+(defn compare-by-angle [[sx sy] [ax ay] [bx by]]
+  (cond
+   (and (>= (- ax sx) 0) (< (- bx sx) 0)) true
+   (and (< (- ax sx) 0) (>= (- bx sx) 0)) false
+   (and (== (- ax sx) 0) (== (- bx sx) 0)) (if (or (>= (- ay sy) 0) (>= (- by sy) 0))
+                                             (> ay by)
+                                             (> by ay))
+   true (let [det (-
+                   (* (- ax sx) (- by sy))
+                   (* (- bx sx) (- ay sy)))]
+          (cond
+           (< det 0) true
+           (> det 0) false
+           true (let [d1 (+
+                          (* (- ax sx) (- ax sx))
+                          (* (- ay sy) (- ay sy)))
+                      d2 (+
+                          (* (- bx sx) (- bx sx))
+                          (* (- by sy) (- by sy)))]
+                  (> d1 d2))))))
+
+(defn sort-by-angle [centre points]
+  (vec
+   (sort-by identity (fn [px py] (compare-by-angle centre px py)) points)))
 
 (defn draw []
-  (let [sun [(q/mouse-x) (q/mouse-y)]]
+  (let [sun [(q/mouse-x) (q/mouse-y)]
+        impacts (impacts sun lines intersections)
+        sorted-impacts (sort-by-angle sun impacts)]
     (println "drawing at" (q/current-frame-rate))
+    (println impacts)
+    (println sorted-impacts)
     (q/background 255)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
     (q/ellipse (sun 0) (sun 1) 10 10)
-    (doseq [[x0 y0 x1 y1] lines]
-      (draw-ray sun x0 y0)
-      (draw-ray sun x1 y1))
-    (doseq [[_ _ x y] intersections]
-      (draw-ray sun x y))
+    (doseq [[ix iy] sorted-impacts]
+      (q/line (sun 0) (sun 1) ix iy))
     (q/stroke 0 0 0)
+    (doseq [[ix iy] (take 1 sorted-impacts)]
+      (q/line (sun 0) (sun 1) ix iy))
     (doseq [[x0 y0 x1 y1] edges]
       (q/line x0 y0 x1 y1))
     (q/stroke 0 255 0)
