@@ -3,6 +3,7 @@
             [matchbox.core :as m]
             [quil.core :as q :include-macros true]
             [el-sistema.sun])
+
             )
 
 ;; (defonce conn
@@ -22,7 +23,7 @@
   [x y (+ angle (->rad degrees))])
 
 (def default-angle 25)
-(def default-length 20)
+(def default-length 10)
 
 (defmulti process-instruction (fn [instruction _ _] instruction))
 (defmethod process-instruction \X [_ position stack] [nil position stack])
@@ -92,10 +93,10 @@
                    (apply str l r))
                  (iterate (partial apply-rule ruleset) ["" init]))))
 
-(def seq (sequence-for ruleset "X"))
+(def tree-sequence (sequence-for ruleset "X"))
 
 (defn segs [n]
-  (tree-segs (nth seq n) [50 500 90]))
+  (tree-segs (nth tree-sequence n) [50 500 90]))
 
 (def depth (atom 0))
 
@@ -111,6 +112,6 @@
 
 (q/defsketch hello
   :draw draw
-  :host "screen"
-  :size [800 600]
+  :host "tree"
+  :size [600 400]
   )
