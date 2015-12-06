@@ -141,9 +141,9 @@
         absorbs (make-array (count trees))]
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
-    (dotimes [a max-absorbs
-              absorb (/ 1 (js/Math.pow absorb-rate a))]
-      (let [impacts (aget impacts a)]
+    (dotimes [a max-absorbs]
+      (let [impacts (aget impacts a)
+            absorb (/ 1 (js/Math.pow absorb-rate a))]
         (areduce impacts i _ nil
                  (let [impact0 (aget impacts i)
                        impact1 (aget impacts (mod (+ i 1) (alength impacts)))
