@@ -34,7 +34,7 @@
     (let [ix (+ p0_x (* t s1_x))
           iy (+ p0_y (* t s1_y))]
       (when (and (> s 0) (< s 1) (> t 0) (< t 1))
-        [s t ix iy]))))
+        (array s t ix iy)))))
 
 (defn ray-intersection [ray-from ray-to line]
   (let [p0_x (aget ray-from 0)
@@ -129,33 +129,34 @@
 
 (defn calculate-sunlight [sun trees width height]
   (let [sun (into-array sun)
-        lines (into-array (concat
-                           (for [[tree id] (map vector trees (range))
-                                 [[x0 y0] [x1 y1]] tree]
-                             (array id x0 y0 x1 y1))
-                           [(array -1 0 0 width 0)
-                            (array -1 width 0 width height)
-                            (array -1 width height 0 height)
-                            (array -1 0 height 0 0)]))
+        lines (array)
+        _ (doseq [[tree id] (map vector trees (range))
+                  [[x0 y0] [x1 y1]] tree]
+            (.push lines (array id x0 y0 x1 y1)))
+        _ (.push lines (array -1 0 0 width 0))
+        _ (.push lines (array -1 width 0 width height))
+        _ (.push lines  (array -1 width height 0 height))
+        _ (.push lines (array -1 0 height 0 0))
         intersections (array)
         _ (areduce lines ix0 _ nil
                    (areduce lines ix1 _ nil
                             (when-let [intersection (line-intersection (aget lines ix0) (aget lines ix1))]
                               (.push intersections intersection))))
-        points (into-array
-                (concat
-                 (for [[_ _ x y] intersections]
-                   (array x y))
-                 (for [[_ x y _ _] lines]
-                   (array x y))
-                 (for [[_ _ _ x y] lines]
-                   (array x y))))
-        targets (into-array
-                 (concat
-                  (for [point points]
-                    (rotate 0.0001 sun point))
-                  (for [point points]
-                    (rotate -0.0001 sun point))))
+        points (array)
+        _ (areduce intersections ix _ nil
+                   (let [intersection (aget intersections ix)]
+                     (.push points (array (aget intersection 2) (aget intersection 3)))))
+        _ (areduce lines ix _ nil
+                   (let [line (aget lines ix)]
+                     (.push points (array (aget line 1) (aget line 2)))))
+        _ (areduce lines ix _ nil
+                   (let [line (aget lines ix)]
+                     (.push points (array (aget line 3) (aget line 4)))))
+        targets (array)
+        _ (areduce points ix _ nil
+                   (.push targets (rotate 0.0001 sun (aget points ix))))
+        _ (areduce points ix _ nil
+                   (.push targets (rotate -0.0001 sun (aget points ix))))
         impacts (array)
         _ (areduce targets ix _ nil
                    (let [intersection (closest-intersection sun (aget targets ix) lines)]
