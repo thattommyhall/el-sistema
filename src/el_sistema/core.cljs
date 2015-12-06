@@ -2,11 +2,14 @@
   (:require [clojure.browser.repl :as repl]
             [matchbox.core :as m]
             [quil.core :as q :include-macros true]
-            [el-sistema.sun])
-            )
+            [el-sistema.logic :as logic]))
 
-;; (defonce conn
-;;   (repl/connect "http://localhost:9000/repl"))
+
+(enable-console-print!)
+(println "TOM TEST ")
+
+(defonce conn
+  (repl/connect "http://localhost:9000/repl"))
 
 
 (defn move [[x y angle] units]
@@ -22,7 +25,7 @@
   [x y (+ angle (->rad degrees))])
 
 (def default-angle 25)
-(def default-length 20)
+(def default-length 10)
 
 (defmulti process-instruction (fn [instruction _ _] instruction))
 (defmethod process-instruction \X [_ position stack] [nil position stack])
@@ -49,30 +52,30 @@
               new-stack))
      (filter (comp not nil?) accum))))
 
-(defonce conn
-    (repl/connect "http://localhost:9000/repl"))
+;; (defonce conn
+;;   (repl/connect "http://localhost:9000/repl"))
 
-(enable-console-print!)
 
-(println "Hello world!")
 
-(def root (m/connect "https://el-sistema.firebaseio.com"))
 
-(m/auth-anon root)
 
-(m/listen-children
-  root [:users :mike :friends]
-  (fn [[event-type data]] (prn event-type data)))
+;; (def root (m/connect "https://el-sistema.firebaseio.com"))
 
-(def mikes-friends (m/get-in root [:users :mike :friends]))
-(m/reset! mikes-friends [{:name "Kid A"} {:name "Kid B"}])
-(m/conj! mikes-friends {:name "Jean"})
+;; (m/auth-anon root)
 
-(m/deref
-  mikes-friends
-  (fn [key value]
-    (m/reset-in! root [:users :mike :num-friends]
-                 (count value))))
+;; (m/listen-children
+;;   root [:users :mike :friends]
+;;   (fn [[event-type data]] (prn event-type data)))
+
+;; (def mikes-friends (m/get-in root [:users :mike :friends]))
+;; (m/reset! mikes-friends [{:name "Kid A"} {:name "Kid B"}])
+;; (m/conj! mikes-friends {:name "Jean"})
+
+;; (m/deref
+;;   mikes-friends
+;;   (fn [key value]
+;;     (m/reset-in! root [:users :mike :num-friends]
+;;                  (count value))))
 
 (def ruleset {\X "F-[[X]+X]+F[+FX]-X"
               \F "FF"})
@@ -92,25 +95,47 @@
                    (apply str l r))
                  (iterate (partial apply-rule ruleset) ["" init]))))
 
-(def seq (sequence-for ruleset "X"))
+(def tree-sequence (sequence-for ruleset "X"))
 
 (defn segs [n]
-  (tree-segs (nth seq n) [50 500 90]))
+  (tree-segs (nth tree-sequence n) [50 500 90]))
 
 (def depth (atom 0))
 
+(println "blah!!")
+(def sample-genome (logic/parse-genome-string "(genome
+                                                  (rule (< length 10)  => (grow 1))
+                                                  (rule (>= length 10) => (branch -60 +60)))"))
+
+(defn segs [n]
+  (println "INVOKING SEGS " n)
+  (->> (iterate (partial logic/evolve-plant 20) (logic/seed sample-genome))
+       (take n)
+       (last) ; last iteration
+       (logic/plant->segs 100)))
+
 (defn draw []
-  (println segs)
+  ;; (println segs)
   (q/background 100)
   ;; (q/fill 0)
   (q/stroke-float 0)
   (let [nsegs (segs @depth)]
+    (println "PRINTING!!! " (count nsegs))
     (doseq [[start stop] nsegs]
       (q/line start stop)))
   (swap! depth inc))
 
-(q/defsketch hello
-  :draw draw
-  :host "screen"
-  :size [800 600]
+(defn setup []
+  (q/frame-rate 30)
+  ;; (q/color-mode :rgb)
   )
+
+
+;(q/defsketch hello
+;  :setup setup
+;  :draw draw
+;  :host "tree"
+;  :size [600 400]
+;  )
+
+(println (segs 500))
