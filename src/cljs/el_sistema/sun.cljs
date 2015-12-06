@@ -1,11 +1,20 @@
 (ns el-sistema.sun
   (:require [quil.core :as q :include-macros true]
             [goog.string]
-            [goog.string.format])
+            [goog.string.format]
+            [goog.array])
   )
 
-(defn line-intersection [[_ p0_x p0_y p1_x p1_y] [_ p2_x p2_y p3_x p3_y]]
-  (let [s1_x (- p1_x p0_x)
+(defn line-intersection [line0 line1]
+  (let [p0_x (aget line0 1)
+        p0_y (aget line0 2)
+        p1_x (aget line0 3)
+        p1_y (aget line0 4)
+        p2_x (aget line1 1)
+        p2_y (aget line1 2)
+        p3_x (aget line1 3)
+        p3_y (aget line1 4)
+        s1_x (- p1_x p0_x)
         s1_y (- p1_y p0_y)
         s2_x (- p3_x p2_x)
         s2_y (- p3_y p2_y)
@@ -59,14 +68,17 @@
         (array s t ix iy)))))
 
 (defn closest-intersection [ray-from ray-to lines]
-  (array-reduce lines
-                (fn [closest line]
-                  (if-let [impact (ray-intersection ray-from ray-to line)]
-                    (if (< (aget impact 1) (aget closest 2))
-                      (array (aget line 0) (aget impact 0) (aget impact 1) (aget impact 2) (aget impact 3))
-                      closest)
-                    closest))
-                (array -1 0 js/Number.POSITIVE_INFINITY (aget ray-to 0) (aget ray-to 1))))
+  (let [closest (array -1 0 js/Number.POSITIVE_INFINITY (aget ray-to 0) (aget ray-to 1))]
+    (areduce lines ix _ nil
+             (let [line (aget lines ix)]
+               (when-let [impact (ray-intersection ray-from ray-to line)]
+                 (when (< (aget impact 1) (aget closest 2))
+                   (aset closest 0 (aget line 0))
+                   (aset closest 1 (aget impact 0))
+                   (aset closest 2 (aget impact 1))
+                   (aset closest 3 (aget impact 2))
+                   (aset closest 4 (aget impact 3))))))
+    closest))
 
 (defn rotate [angle [sx sy] [x y]]
   (let [a (q/cos angle)
@@ -87,28 +99,27 @@
         bx (aget b 1)
         by (aget b 2)]
     (cond
-     (and (>= (- ax sx) 0) (< (- bx sx) 0)) true
-     (and (< (- ax sx) 0) (>= (- bx sx) 0)) false
+     (and (>= (- ax sx) 0) (< (- bx sx) 0)) 1
+     (and (< (- ax sx) 0) (>= (- bx sx) 0)) -1
      (and (== (- ax sx) 0) (== (- bx sx) 0)) (if (or (>= (- ay sy) 0) (>= (- by sy) 0))
-                                               (> ay by)
-                                               (> by ay))
+                                               (if (> ay by) 1 -1)
+                                               (if (> by ay) 1 -1))
      true (let [det (-
                      (* (- ax sx) (- by sy))
                      (* (- bx sx) (- ay sy)))]
             (cond
-             (< det 0) true
-             (> det 0) false
+             (< det 0) 1
+             (> det 0) -1
              true (let [d1 (+
                             (* (- ax sx) (- ax sx))
                             (* (- ay sy) (- ay sy)))
                         d2 (+
                             (* (- bx sx) (- bx sx))
                             (* (- by sy) (- by sy)))]
-                    (> d1 d2)))))))
+                    (if (> d1 d2) 1 -1)))))))
 
 (defn sort-by-angle [centre points]
-  (vec
-   (sort-by identity (fn [px py] (compare-by-angle centre px py)) points)))
+  (goog.array/stableSort points (fn [px py] (compare-by-angle centre px py))))
 
 (defn angle-between [[sx sy] [_ ax ay] [_ bx by]]
   (let [angle-a (js/Math.atan2 (- ay sy) (- ax sx))
@@ -126,16 +137,12 @@
                             (array -1 width 0 width height)
                             (array -1 width height 0 height)
                             (array -1 0 height 0 0)]))
-        intersections (array-reduce lines
-                                    (fn [acc line0]
-                                      (array-reduce lines
-                                       (fn [acc line1]
-                                         (when-let [intersection (line-intersection line0 line1)]
-                                           (.push acc intersection))
-                                         acc)
-                                       acc))
-                                    (array))
-        points (vec
+        intersections (array)
+        _ (areduce lines ix0 _ nil
+                   (areduce lines ix1 _ nil
+                            (when-let [intersection (line-intersection (aget lines ix0) (aget lines ix1))]
+                              (.push intersections intersection))))
+        points (into-array
                 (concat
                  (for [[_ _ x y] intersections]
                    (array x y))
@@ -143,20 +150,18 @@
                    (array x y))
                  (for [[_ _ _ x y] lines]
                    (array x y))))
-        targets (vec
+        targets (into-array
                  (concat
                   (for [point points]
                     (rotate 0.0001 sun point))
                   (for [point points]
                     (rotate -0.0001 sun point))))
-        impacts (into-array
-                 (for [target targets]
-                   (let [[id _ _ x y] (closest-intersection sun target lines)]
-                     (array id x y))))
+        impacts (array)
+        _ (areduce targets ix _ nil
+                   (let [intersection (closest-intersection sun (aget targets ix) lines)]
+                     (.push impacts (array (aget intersection 0) (aget intersection 3) (aget intersection 4)))))
         absorbs (make-array (count trees))]
-    (println (aget impacts 0))
     (sort-by-angle sun impacts)
-    (println (aget impacts 0))
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
     (doseq [i (range (alength impacts))]
