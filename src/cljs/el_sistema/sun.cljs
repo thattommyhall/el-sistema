@@ -198,9 +198,6 @@
     (areduce lines i _ nil
              (let [line (aget lines i)]
                (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
-    (q/fill 255)
-    (q/stroke 255)
-    (q/ellipse (sun 0) (sun 1) 20 20)
     (q/stroke 255 0 0)
     (q/fill 255 0 0)
     (areduce lines i _ nil
@@ -212,6 +209,9 @@
                (q/ellipse (aget line 3) (aget line 4) brightness brightness)))
     (q/tint 200 200 100 220)
     (q/image (q/state :light) 0 0)
+    (q/fill 255)
+    (q/stroke 255)
+    (q/ellipse (sun 0) (sun 1) 20 20)
     absorbs))
 
 (defn setup []
