@@ -197,8 +197,10 @@
     (q/stroke 255 0 0)
     (q/stroke-weight 3)
     (areduce lines i _ nil
-             (let [line (aget lines i)]
-               (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
+             (let [line (aget lines i)
+                   id (get line 0)]
+               (when (>= id 0)
+                 (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4)))))
     (q/tint 255 255 100 220)
     (q/image (q/state :light) 0 0)
     (q/fill 255)
