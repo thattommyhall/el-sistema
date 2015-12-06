@@ -12,23 +12,31 @@
         <script src="out/el_sistema.js" type="text/javascript"></script>
     </head>
     <body>
-        <h1>New Plant</h1>
         <div class="container-fluid">
-            <p id="mandatory-fields-error" class="bg-danger" style="display:none">Some mandatory fields are missing.</p>
-            <form id="editor-form">
-                <div id="plant-name-control" class="form-group">
-                    <label for="plnat-name">Name</label>
-                    <input id="plant-name" type="text" class="form-control"">
+            <div class="row">
+                <div class="col-md-12 col-md-offset-2">
+                    <h1>New Plant</h1>
                 </div>
+            </div>
+            <div clas="row">
+                <p class="col-md-12 col-md-offset-2" "id="mandatory-fields-error" class="bg-danger" style="display:none">Some mandatory fields are missing.</p>
+            </div>
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2">
+                    <form id="editor-form">
+                        <div id="plant-name-control" class="form-group">
+                            <label for="plnat-name">Name</label>
+                            <input id="plant-name" type="text" class="form-control"">
+                        </div>
 
-                <div id="plant-author-control" class="form-group">
-                    <label for="plnat-author">Author</label>
-                    <input id="plant-author" type="text" class="form-control">
-                </div>
+                        <div id="plant-author-control" class="form-group">
+                            <label for="plnat-author">Author</label>
+                            <input id="plant-author" type="text" class="form-control">
+                        </div>
 
-                <div id="genome-control" class="form-group">
-                    <label for="plant-genome">Genome</label>
-                    <textarea id="plant-genome" class="form-control">
+                        <div id="genome-control" class="form-group">
+                            <label for="plant-genome">Genome</label>
+                            <textarea id="plant-genome" class="form-control">
 ;; example plant genome
 (genome
  ; this should be a list of rules (conditions => actions)
@@ -42,72 +50,121 @@
  (rule condition2 => action2)
  ...
 )</textarea>
-                    <p id="genome-error" class="bg-danger" style="display:none"></p>
+                            <p id="genome-error" class="bg-danger" style="display:none"></p>
+                        </div>
+
+                        <button type="submit" class="btn btn-default">Save</button>
+                    </form>
                 </div>
+            </div>
 
-                <button type="submit" class="btn btn-default">Create</button>
-            </form>
-        </div>
+            <script type="text/javascript">
+             var goHome = function(author) {
+                 var oldLocation = window.location.toString();
+                 var parts = oldLocation.split("/editor.html");
+                     window.location = parts[0] + '/home.html#'+author;
+             };
 
-        <script type="text/javascript">
-         var textArea = document.getElementById('plant-genome');
-         var myCodeMirror = CodeMirror.fromTextArea(textArea, { lineNumbers:true, mode: 'clojure' });
-
-         var savePlant = function(name, author, genome) {
+             var textArea = document.getElementById('plant-genome');
+             var myCodeMirror = CodeMirror.fromTextArea(textArea, { lineNumbers:true, mode: 'clojure' });
              var myFirebaseRef = new Firebase("https://el-sistema.firebaseio.com/plants");
 
-             return myFirebaseRef.push({
-                 genome: genome,
-                 name: name,
-                 author: author
-             }, function(error){
-                 if(error) {
-                     alert("Error saving plant: "+error);
-                 } else {
-                     alert("Plant "+name+" created");
+             var savePlant = function(name, author, genome) {
+                 return myFirebaseRef.push({
+                     genome: genome,
+                     name: name,
+                     author: author
+                 }, function(error){
+                     if(error) {
+                         alert("Error saving plant: "+error);
+                     } else {
+                         alert("Plant "+name+" created");
+                         goHome(author);
+                     }
+                 });
+             };
+
+             var updatePlant = function(name, author, genome) {
+                 var myFirebaseRef = new Firebase("https://el-sistema.firebaseio.com/plants/"+plantKey);
+                 return myFirebaseRef.update({
+                     genome: genome,
+                     name: name,
+                     author: author
+                 }, function(error){
+                     if(error) {
+                         alert("Error updating plant: "+error);
+                     } else {
+                         alert("Plant "+name+" updated");
+                         goHome(author);
+                     }
+                 });
+             };
+
+             var loadPlant = function(plantKey) {
+                 myFirebaseRef.orderByKey().equalTo(plantKey).on('value', function(snapshot){
+                     snapshot.forEach(function(plant){
+                         var plantValue = plant.val();
+                         plantValue.key = plantKey;
+                         myCodeMirror.setValue(plantValue.genome);
+                         $("#plant-author").val(plantValue.author);
+                         $("#plant-name").val(plantValue.name);
+                     });
+                 });
+             };
+
+             var parts = window.location.toString().split("#");
+             isLoading = false;
+             var plantKey = null;
+
+             if(parts.length == 2) {
+                 plantKey = parts[1];
+                 isLoading = true;
+                 loadPlant(plantKey)
+             }
+
+             $("#editor-form").on('submit',function(e) {
+                 var genome = myCodeMirror.getValue();
+                 var hasError = false;
+                 try {
+                     $("#genome-control").removeClass('has-error');
+                     $("#genome-error").hide();
+                     el_sistema.logic.parse_genome_string(genome);
+                 } catch(e) {
+                     hasError = true;
+                     $("#genome-control").addClass('has-error');
+                     $("#genome-error").text(e);
+                     $("#genome-error").show();
                  }
-             });
-         };
 
-         $("#editor-form").on('submit',function(e) {
-             var genome = myCodeMirror.getValue();
-             var hasError = false;
-             try {
-                 $("#genome-control").removeClass('has-error');
-                 $("#genome-error").hide();
-                 el_sistema.logic.parse_genome_string(genome);
-             } catch(e) {
-                 hasError = true;
-                 $("#genome-control").addClass('has-error');
-                 $("#genome-error").text(e);
-                 $("#genome-error").show();
-             }
-
-             var author = $("#plant-author").val();
-             var plantName = $("#plant-name").val();
-             $("#plant-author-control").removeClass('has-error');
-             if(author == null || author === "") {
-                 hasError = true;
-                 $("#plant-author-control").addClass('has-error');
-             }
+                 var author = $("#plant-author").val();
+                 var plantName = $("#plant-name").val();
+                 $("#plant-author-control").removeClass('has-error');
+                 if(author == null || author === "") {
+                     hasError = true;
+                     $("#plant-author-control").addClass('has-error');
+                 }
                  $("#plant-name-control").removeClass('has-error');
-             if(plantName == null || plantName === "") {
-                 hasError = true;
-                 $("#plant-name-control").addClass('has-error');
-             }
+                 if(plantName == null || plantName === "") {
+                     hasError = true;
+                     $("#plant-name-control").addClass('has-error');
+                 }
 
-             $("#mandatory-fields-error").hide();
-             if(hasError === true) {
-                 $("#mandatory-fields-error").show();
-             }
+                 $("#mandatory-fields-error").hide();
+                 if(hasError === true) {
+                     $("#mandatory-fields-error").show();
+                 }
 
-             if(hasError === false) {
-                 savePlant(plantName, author, genome);
-             }
+                 if(hasError === false) {
+                     if(isLoading === true) {
+                         updatePlant(plantName, author, genome);
+                     } else {
+                         savePlant(plantName, author, genome);
+                     }
+                 }
 
-             e.preventDefault();
-             return false;
-         });
-        </script>
+                 e.preventDefault();
+                 return false;
+             });
+            </script>
     </body>
 </html>

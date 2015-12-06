@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>El Sistema</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.9.0/codemirror.min.css">
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://cdn.firebase.com/js/client/2.3.2/firebase.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.js"></script>
+        <script src="out/el_sistema.js" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/2.2.0/mustache.js"></script>
+    </head>
+    <body>
+        <div class="container-fluid">
+            <div class="row">
+                <h1 class="col-md-5 col-md-offset-2">List Plants</h1>
+                <div class="col-md-3">
+                    <button style="margin-top:30px" class="btn btn-primary pull-right" onclick="newPlant()">Create New Plant</button>
+                </div>
+            </div>
+            <div id="author-form" class="row" style="margin-bottom:20px">
+                <div class="col-md-8 col-md-offset-2">
+                    <p id="mandatory-fields-error" class="bg-danger" style="display:none">Some mandatory fields are missing.</p>
+                    <form id="user-form">
+                        <div id="plant-author-control" class="form-group">
+                            <label for="plnat-author">Author</label>
+                            <input id="plant-author" type="text" class="form-control">
+                        </div>
+
+                        <button type="submit" class="btn btn-default">Load plants</button>
+                    </form>
+                </div>
+            </div>
+            <div id="plants-list" class="row" style="display:none">
+                <div class="col-md-8 col-md-offset-2">
+                    <table class="table table-bordered" id="plants-table">
+                        <thead><tr><th>Plant name</th><th>Size</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <script id="plant-in-table" type="x-tmpl-mustache">
+                    <tr>
+                        <td>{{name}}</td>
+                        <td>{{genome.length}}</td>
+                        <td>
+                            <button class="btn btn-default" onclick="editPlant('{{key}}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deletePlant('{{key}}')">Delete</button>
+                            <button class="btn btn-success" onclick="startMatch('{{key}}')">Start Match</button>
+                        </td>
+                    </tr>
+                </script>
+                <script type="text/javascript">
+                 var loadPlants = function(name, cb) {
+                     var myFirebaseRef = new Firebase("https://el-sistema.firebaseio.com/plants");
+
+                     myFirebaseRef.orderByChild('author').equalTo(name).on('value', function(snapshot){
+                         $("#author-form").hide();
+                         $("#plants-list").show();
+                         snapshot.forEach(function(plant){
+                             plantValue = plant.val();
+                             plantValue.key = plant.key();
+                             cb(plantValue);
+                         });
+                     });
+                 };
+                 var loadAuthorPlants = function(author) {
+                     $("#plant-author-control").removeClass('has-error');
+                     if(author == null || author === "") {
+                         hasError = true;
+                         $("#plant-author-control").addClass('has-error');
+                     }
+
+                     var plants = loadPlants(author, function(plant){
+                         renderPlant(plant);
+                     });
+                 }
+
+                 var template = $('#plant-in-table').html();
+                 Mustache.parse(template);
+                 var renderPlant = function(plant) {
+                     var rendered = Mustache.render(template, plant);
+                     $('#plants-table tbody').append(rendered);
+                 };
+
+                 $("#user-form").on('submit',function(e) {
+                     window.author = $("#plant-author").val();
+                     loadAuthorPlants(author);
+                     return false;
+                     e.preventDefault();
+                     return false;
+                 });
+
+                 window.editPlant = function(key) {
+                     var oldLocation = window.location.toString();
+                     var parts = oldLocation.split("/home.html");
+
+                     window.location = parts[0] + '/editor.html#'+key;
+                 };
+
+                 window.startMatch = function(key) {
+                     var oldLocation = window.location.toString();
+                     var parts = oldLocation.split("/home.html");
+
+                     window.location = parts[0] + '/match.html#'+key;
+                 };
+
+                 window.deletePlant = function(key) {
+                     var myFirebaseRef = new Firebase("https://el-sistema.firebaseio.com/plants/"+key);
+                     return myFirebaseRef.remove(function(error){
+                         if(error) {
+                             alert("Error deleting plant: "+error);
+                         } else {
+                             alert("Plant "+name+" deleted");
+                             var oldLocation = window.location.toString();
+                             var parts = oldLocation.split("/home.html");
+
+                             window.location = parts[0] + '/home.html#'+author;
+                         }
+                     });
+                 };
+
+                 window.newPlant = function(){
+                     var oldLocation = window.location.toString();
+                     var parts = oldLocation.split("/home.html");
+
+                     window.location = parts[0] + '/editor.html';
+                 };
+
+                 var parts = window.location.toString().split("#");
+                 isLoading = false;
+                 window.author = null;
+
+                 if(parts.length == 2) {
+                     window.author = parts[1];
+                     isLoading = true;
+                     loadAuthorPlants(author);
+                 }
+
+                </script>
+    </body>
+</html>
