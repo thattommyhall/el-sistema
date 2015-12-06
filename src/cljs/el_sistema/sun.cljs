@@ -198,7 +198,7 @@
 
 (defn draw [sun trees width height]
   (let [{absorbs :absorbs impacts :impacts} (calculate-sunlight sun trees width height)]
-    (println "drawing at" (q/current-frame-rate))
+    ;; (println "drawing at" (q/current-frame-rate))
     (q/background 255)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)

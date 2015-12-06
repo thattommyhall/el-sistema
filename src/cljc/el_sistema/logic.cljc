@@ -6,7 +6,7 @@
 
 (defrecord Branch [angle length children])
 
-(defrecord Plant [genome branch energy x])
+(defrecord Plant [genome branch energy x total-energy])
 
 
 ;; Aux functions
@@ -22,7 +22,6 @@
    (+ y (* units (Math/cos angle)))
    angle])
 
-(move [0 0 (->rad -45)] 100)
 
 (defn rotate [[x y angle] rads]
   [x y (+ angle rads)])
@@ -36,7 +35,7 @@
   ;;(Math/pow 1.1 height)
   ;;(* 0.2 height)
   (* 0.01
-      (* height height)))
+     (* height height)))
 
 ;; condition and actions
 
@@ -150,7 +149,8 @@
 
 (defn seed [genome] (map->Plant {:genome genome
                                  :branch (map->Branch {:angle (->rad 0), :length 5, :children []})
-                                 :energy 0}))
+                                 :energy 0
+                                 :total-energy 0}))
 
 (defn compute-final-height [height length angle]
   (+ height (* length (Math/cos (->rad angle)))))
@@ -188,11 +188,14 @@
               [final-energy new-children] (evolve-branches genome children remaining-energy final-height)]
           [final-energy (assoc branch :children new-children)])))))
 
-(defn evolve-plant [{:keys [genome branch energy] :as plant} increment-energy ]
+(defn evolve-plant [{:keys [genome branch energy total-energy] :as plant} increment-energy ]
   (let [available-energy (+ energy increment-energy)
         [remaining-energy new-branch] (evolve genome branch available-energy 0)
         remaining-energy (if (< remaining-energy 0) 0 remaining-energy)]
-    (-> plant (assoc :branch new-branch) (assoc :energy remaining-energy))))
+    (-> plant
+        (assoc :branch new-branch)
+        (assoc :energy remaining-energy)
+        (update :total-energy #(+ % increment-energy)))))
 ;;;
 
 (defn plant->segs

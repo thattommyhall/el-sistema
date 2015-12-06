@@ -7,7 +7,7 @@
             [el-sistema.simulation :as simulation]))
 
 (enable-console-print!)
-
+(def garden (atom nil))
 
 ;; (defonce conn
 ;;   (repl/connect "http://localhost:9000/repl"))
@@ -30,19 +30,17 @@
 ;;     (m/reset-in! root [:users :mike :num-friends]
 ;;                  (count value))))
 
-
-
 (def garden-width 600)
 
-(def genome-1 (logic/parse-genome-string "(genome
-                                             (rule (< length 50)  => (grow 10))
-                                             (rule (>= length 50) => (branch +10 -10))
-                                             )"))
-(def genome-2 (logic/parse-genome-string "(genome
+(def genome-1 "(genome
+                 (rule (< length 50)  => (grow 10))
+                 (rule (>= length 50) => (branch +10 -10))
+                    )")
+(def genome-2 "(genome
                                             (rule (< length 200) => (grow 3))
-                                            (rule (> length 200) => (branch + 5)))"))
+                                            (rule (> length 200) => (branch + 5)))")
 
-(def garden (atom (simulation/make-garden garden-width [genome-1 genome-2])))
+
 
 
 (defn print-plant-string [plant] (println "PLANT:" (logic/plant->string plant)) plant)
@@ -53,38 +51,72 @@
   ;; (println plant)
   (->> plant
        ;(print-plant-string)
-       (print-plant-energy)
-       (print-plant-segments)
+       ;; (print-plant-energy)
+       ;; (print-plant-segments)
        (logic/plant->segs (:x plant))))
+
+(def fps 30)
+(def max-gen (* fps 60))
+
+(defn finished?
+  ([] (finished? @garden))
+  ([garden] (>= (:generation garden) max-gen)))
+
+(defn final-energy [plants]
+  (map (fn [{:keys [energy total-energy] :as plant}]
+         (-> plant
+             (assoc :total-energy (- total-energy energy))
+             (assoc :energy 0)))
+       plants
+       ))
+
+(defn final-energy-percentage [total-energy plants]
+  (map (fn [plant] (assoc plant :total-energy (/ (:total-energy plant) total-energy))) plants))
+
+(defn compute-result [garden]
+  (let [gardenp (update garden :plants final-energy)
+        total-energy (reduce + (map :total-energy (:plants gardenp)))]
+    (update gardenp :plants (partial final-energy-percentage total-energy))))
+
+(defn scores []
+  (clj->js (map (fn [{:keys [total-energy energy]}]
+                 (- total-energy energy))
+               (:plants @garden))))
 
 (defn draw []
   (q/background 100)
-  ;; (q/fill 0)
   (q/stroke-float 0)
-                                        ; drawing the plants
   ;; (println  (:plants @garden))
-  (println "count" (count (:plants @garden) ))
+  ;; (println "count" (count (:plants @garden) ))
   (let [plants-segs (map segs (:plants @garden))
-        _ (println "num plant: " (count  (:plants @garden)))
-        _ (println "num segs" (count  plants-segs))
+        ;; _ (println "num plant: " (count  (:plants @garden)))
+        ;; _ (println "num segs" (count  plants-segs))
         absorbs (sun/draw [300 400] plants-segs garden-width 400)
-        _ (println "absorbs: " absorbs)
+        ;; _ (println "absorbs: " absorbs)
         next-garden (simulation/evolve-garden @garden absorbs)]
     ;; (println next-garden)
-    (reset! garden next-garden)))
-
+    (if (finished? next-garden)
+      (reset! garden (compute-result next-garden))
+      (reset! garden next-garden))))
 
 (defn setup []
-  (q/color-mode :rgb)
-  (q/frame-rate 1))
-
+    (q/color-mode :rgb)
+    (q/frame-rate fps)
+    (draw)
+    )
 
 (q/defsketch hello
-  :setup setup
-  :draw draw
-  :host "tree"
-  :size [garden-width 400]
-  )
+      :setup setup
+      :draw draw
+      :host "tree"
+      :size [garden-width 400]
+      )
 
-;(println "NOW!!!")
-;(println (segs 50))
+(defn run ^:export [g1 g2]
+  (let [g1 (logic/parse-genome-string g1)
+        g2 (logic/parse-genome-string g2)]
+    (reset! garden (simulation/make-garden garden-width [g1 g2]))
+    ))
+
+(defn run-sim []
+  (run genome-1 genome-2))
