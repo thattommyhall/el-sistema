@@ -8,18 +8,21 @@
 
 (defrecord Plant [genome branch energy x])
 
+
 ;; Aux functions
 (defn ->rad [degrees]
   (* (/ degrees 360)
      (* 2 Math/PI)))
 
 (defn ->degrees [radians]
-  (* radians(/ 180 Math/PI)))
+  (* radians (/ 180 Math/PI)))
 
 (defn move [[x y angle] units]
-  [(+ x (* units (Math/cos angle)))
-   (+ y (* units (Math/sin angle)))
+  [(+ x (* units (Math/sin angle)))
+   (+ y (* units (Math/cos angle)))
    angle])
+
+(move [0 0 (->rad -45)] 100)
 
 (defn rotate [[x y angle] rads]
   [x y (+ angle rads)])
@@ -28,6 +31,12 @@
 
 ;;; Length consumed by creating a new branch
 (def branching-consumed-length 5)
+
+(defn compute-energy-cost [height]
+  ;;(Math/pow 1.1 height)
+  ;;(* 0.2 height)
+  (* 0.01
+      (* height height)))
 
 ;; condition and actions
 
@@ -61,10 +70,7 @@
   (let [branching-consumed-energy (* branching-consumed-length (count branches))]
     (->Action branching-consumed-energy
               (fn [branch energy energy-per-length-unit]
-                (let [new-branches (map (fn [angle]
-                                          (let [[_ _ anglep] (rotate [0 0 (:angle branch)] (->rad angle))]
-                                            (map->Branch {:angle anglep, :length 0 :children []})))
-                                        branches)]
+                (let [new-branches (map (fn [angle] (map->Branch {:angle (->rad angle), :length 0 :children []})) branches)]
                   [(- energy (* energy-per-length-unit branching-consumed-energy))
                    (assoc branch :children new-branches)]))
               :branching)))
@@ -138,10 +144,8 @@
   (->> genome-string (read-string) (parse-genome)))
 
 (defn seed [genome] (map->Plant {:genome genome
-                                 :branch (map->Branch {:angle (->rad 0), :height 0, :length 0, :children []})
+                                 :branch (map->Branch {:angle (->rad 0), :length 5, :children []})
                                  :energy 0}))
-
-(defn compute-energy-cost [height] (Math/pow 1.2 height))
 
 (defn compute-final-height [height length angle]
   (+ height (* length (Math/cos (->rad angle)))))
@@ -179,7 +183,7 @@
               [final-energy new-children] (evolve-branches genome children remaining-energy final-height)]
           [final-energy (assoc branch :children new-children)])))))
 
-(defn evolve-plant [increment-energy {:keys [genome branch energy] :as plant}]
+(defn evolve-plant [{:keys [genome branch energy] :as plant} increment-energy ]
   (let [available-energy (+ energy increment-energy)
         [remaining-energy new-branch] (evolve genome branch available-energy 0)
         remaining-energy (if (< remaining-energy 0) 0 remaining-energy)]
@@ -187,14 +191,14 @@
 ;;;
 
 (defn plant->segs
-  ([x plant] (plant->segs (:branch plant) [x 0 (->rad 90)] []))
+  ([x plant]
+   ;; (println plant)
+   (plant->segs (:branch plant)
+                [x (:length (:branch plant)) (->rad 0)]
+                [[[x 0] [x (:length (:branch plant))]]]))
   ([{:keys [angle children length]} [x y tree-angle :as position] accum]
-   (let [_ (println "INITIAL TREE ANGLE " tree-angle " -> BRANCH ANGLE " angle)
-         _ (println "INITIAL POSITION " [x y])
-         [_ _ anglep] (rotate position angle)
-         _ (println "FINAL ANGLE" anglep)
+   (let [[_ _ anglep] (rotate position angle)
          [xp yp _ ] (move [x y anglep] length)
-         _ (println "FINAL POSITION " [xp yp])
          segment [[x y] [xp yp]]]
      (loop [children children
             accum (conj accum segment)]
@@ -214,8 +218,9 @@
 ;;;;
 
 ;(def sample-genome (parse-genome (read-string "(genome
-;                                                (rule (< length 10) => (grow 1))
-;                                                (rule (>= length 10) => (branch -60 +60)))")))
+;                                                (rule (< length 50) => (grow 10))
+;                                                (rule (>= length 50) => (branch -45 +45)))")))
 ;
 ;(doseq [plant (take 190 (iterate (partial evolve-plant 20) (seed sample-genome)))]
-;  (println "ENERGY " (:energy plant) " -> " (plant->string plant)))
+;  (println "ENERGY " (:energy plant) " -> " (plant->string plant))
+;  (println "SEGMENTS " (plant->segs 100 plant)))
