@@ -80,8 +80,12 @@
                    (aset closest 4 (aget impact 3))))))
     closest))
 
-(defn rotate [angle [sx sy] [x y]]
-  (let [a (q/cos angle)
+(defn rotate [angle centre point]
+  (let [sx (aget centre 0)
+        sy (aget centre 1)
+        x (aget point 0)
+        y (aget point 1)
+        a (q/cos angle)
         b (- (q/sin angle))
         c (- b)
         d a
@@ -121,8 +125,14 @@
 (defn sort-by-angle [centre points]
   (goog.array/stableSort points (fn [px py] (compare-by-angle centre px py))))
 
-(defn angle-between [[sx sy] [_ ax ay] [_ bx by]]
-  (let [angle-a (js/Math.atan2 (- ay sy) (- ax sx))
+(defn angle-between [centre a b]
+  (let [sx (aget centre 0)
+        sy (aget centre 1)
+        ax (aget a 1)
+        ay (aget a 2)
+        bx (aget b 1)
+        by (aget b 2)
+        angle-a (js/Math.atan2 (- ay sy) (- ax sx))
         angle-b (js/Math.atan2 (- by sy) (- bx sx))
         diff (js/Math.abs (- angle-a angle-b))]
   (min diff (- (* 2 js/Math.PI) diff))))
