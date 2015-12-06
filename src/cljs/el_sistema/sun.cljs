@@ -171,7 +171,7 @@
 
 (defn draw [sun trees width height]
   (let [{absorbs :absorbs impacts :impacts lines :lines points :points} (calculate-sunlight sun trees width height)]
-    (println "drawing at" (q/current-frame-rate))
+    ;; (println "drawing at" (q/current-frame-rate))
     (q/background 0)
     (let [[sx sy] sun]
       (q/with-graphics (q/state :light)
@@ -213,6 +213,7 @@
     (q/tint 200 200 100 220)
     (q/image (q/state :light) 0 0)
     absorbs))
+
 
 (defn setup []
   (q/smooth 0)
