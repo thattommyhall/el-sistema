@@ -7,7 +7,7 @@
             [el-sistema.simulation :as simulation]))
 
 
-;(enable-console-print!)
+(enable-console-print!)
 
 ;(defonce conn
 ;  (repl/connect "http://localhost:9000/repl"))
@@ -55,22 +55,27 @@
 (defn print-plant-segments [plant] (println "SEGMENTS " (logic/plant->segs 100 plant)) plant)
 
 (defn segs [plant]
+  ;; (println plant)
   (->> plant
-       :branch
        ;(print-plant-string)
-       ;(print-plant-energy)
-       ;(print-plant-segments)
+       ;; (print-plant-energy)
+       (print-plant-segments)
        (logic/plant->segs (:x plant))))
 
 (defn draw []
-  ;; (println segs)
   (q/background 100)
   ;; (q/fill 0)
   (q/stroke-float 0)
-  ; drawing the plants
+                                        ; drawing the plants
+  ;; (println  (:plants @garden))
+  ;; (println "count" (count (:plants @garden) ))
   (let [plants-segs (map segs (:plants @garden))
-        {:keys [absorbs]} (sun/draw [300 350] [plants-segs] garden-width 400)
+        _ (println "num plant: " (count  (:plants @garden)))
+        ;; _ (println "segs" plants-segs)
+        absorbs (sun/draw [300 400] plants-segs garden-width 400)
+        _ (println "absorbs: " absorbs)
         next-garden (simulation/evolve-garden @garden absorbs)]
+    ;; (println next-garden)
     (reset! garden next-garden)))
 
 

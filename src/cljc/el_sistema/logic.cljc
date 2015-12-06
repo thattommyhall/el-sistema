@@ -143,7 +143,7 @@
   (->> genome-string (read-string) (parse-genome)))
 
 (defn seed [genome] (map->Plant {:genome genome
-                                 :branch (map->Branch {:angle (->rad 0), :height 0, :length 0, :children []})
+                                 :branch (map->Branch {:angle (->rad 0), :length 5, :children []})
                                  :energy 0}))
 
 (defn compute-final-height [height length angle]
@@ -182,7 +182,7 @@
               [final-energy new-children] (evolve-branches genome children remaining-energy final-height)]
           [final-energy (assoc branch :children new-children)])))))
 
-(defn evolve-plant [increment-energy {:keys [genome branch energy] :as plant}]
+(defn evolve-plant [{:keys [genome branch energy] :as plant} increment-energy ]
   (let [available-energy (+ energy increment-energy)
         [remaining-energy new-branch] (evolve genome branch available-energy 0)
         remaining-energy (if (< remaining-energy 0) 0 remaining-energy)]
@@ -190,7 +190,11 @@
 ;;;
 
 (defn plant->segs
-  ([x plant] (plant->segs (:branch plant) [x 0 (->rad 0)] []))
+  ([x plant]
+   (println plant)
+   (plant->segs (:branch plant)
+                [x (:length (:branch plant)) (->rad 0)]
+                []))
   ([{:keys [angle children length]} [x y tree-angle :as position] accum]
    (let [[_ _ anglep] (rotate position angle)
          [xp yp _ ] (move [x y anglep] length)

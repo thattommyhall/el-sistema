@@ -221,7 +221,8 @@
         (q/ellipse x1 y1 brightness brightness)))
     (q/stroke 0 0 0)
     (doseq [[_ x0 y0 x1 y1] edges]
-      (q/line x0 y0 x1 y1))))
+      (q/line x0 y0 x1 y1))
+    absorbs))
 
 (defn setup []
   (q/smooth 8)
