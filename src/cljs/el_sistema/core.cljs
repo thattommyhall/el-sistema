@@ -9,8 +9,8 @@
 (enable-console-print!)
 (println "TOM TEST ")
 
-(defonce conn
-  (repl/connect "http://localhost:9000/repl"))
+;(defonce conn
+;  (repl/connect "http://localhost:9000/repl"))
 
 
 (defn move [[x y angle] units]
@@ -105,14 +105,21 @@
 
 (println "blah!!")
 (def sample-genome (logic/parse-genome-string "(genome
-                                                  (rule (< length 10)  => (grow 1))
-                                                  (rule (>= length 10) => (branch -60 +60)))"))
+                                                  (rule (< length 20)  => (grow 5))
+                                                  (rule (>= length 20) => (branch -60 +60)))"))
+
+(defn print-plant-string [plant] (println "PLANT:" (logic/plant->string plant)) plant)
+(defn print-plant-energy [plant] (println "ENERGY:" (:energy plant)) plant)
+(defn print-plant-segments [plant] (println "SEGMENTS " (logic/plant->segs 100 plant)) plant)
 
 (defn segs [n]
   (println "INVOKING SEGS " n)
-  (->> (iterate (partial logic/evolve-plant 20) (logic/seed sample-genome))
+  (->> (iterate (partial logic/evolve-plant 100) (logic/seed sample-genome))
        (take n)
        (last) ; last iteration
+       (print-plant-string)
+       (print-plant-energy)
+       (print-plant-segments)
        (logic/plant->segs 100)))
 
 (defn draw []
@@ -124,13 +131,17 @@
     (println nsegs)
     (println "PRINTING!!! " (count nsegs))
     (doseq [[start stop] nsegs]
-      (q/line start stop)))
-  (sun/draw [(q/mouse-x) (q/mouse-y)] [nsegs] 600 400)
+      (q/line start stop))
+    ;(sun/draw [(q/mouse-x) (q/mouse-y)] [nsegs] 600 400)
+    )
+
   (swap! depth inc))
 
 (defn setup []
   (q/frame-rate 30)
   (q/color-mode :rgb)
+  (q/frame-rate 10)
+  ;; (q/color-mode :rgb)
   )
 
 
@@ -141,4 +152,5 @@
   :size [600 400]
   )
 
-(println (segs 500))
+(println "NOW!!!")
+(println (segs 50))
