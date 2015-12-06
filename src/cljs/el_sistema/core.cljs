@@ -91,7 +91,7 @@
   (let [plants-segs (map segs (:plants @garden))
         ;; _ (println "num plant: " (count  (:plants @garden)))
         ;; _ (println "num segs" (count  plants-segs))
-        absorbs (sun/draw [300 400] plants-segs garden-width 400)
+        absorbs (sun/draw [(q/mouse-x) (q/mouse-y)] plants-segs garden-width 400)
         ;; _ (println "absorbs: " absorbs)
         next-garden (simulation/evolve-garden @garden absorbs)]
     ;; (println next-garden)
