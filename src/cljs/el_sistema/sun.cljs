@@ -179,7 +179,7 @@
       (let [[id0 x0 y0] (aget impacts i)
             [id1 x1 y1] (aget impacts (mod (+ i 1) (alength impacts)))]
         (when (and (>= id0 0) (== id0 id1))
-          (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun [id0 x0 y0] [id1 x1 y1]))))))
+          (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun (array id0 x0 y0) (array id1 x1 y1)))))))
     {:absorbs absorbs
      :impacts impacts}))
 
@@ -189,8 +189,12 @@
 
 (def trees
   (vec
-   (for [_ (range 100)]
-    [[[(rand-int 500) (rand-int 500)] [(rand-int 500) (rand-int 500)]]])))
+   (for [_ (range 1000)]
+     (let [x0 (rand-int 500)
+           y0 (rand-int 500)
+           x1 (+ x0 (rand-int 25))
+           y1 (+ y0 (rand-int 25))]
+       [[[x0 y0] [x1 y1]]]))))
 
 (defn draw [sun trees width height]
   (let [{absorbs :absorbs impacts :impacts} (calculate-sunlight sun trees width height)]
