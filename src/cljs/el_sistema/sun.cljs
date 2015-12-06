@@ -61,18 +61,6 @@
         (when (< i (alength array))
           (aset array i last))))))
 
-(defn angle-between [centre a b]
-  (let [sx (aget centre 0)
-        sy (aget centre 1)
-        ax (aget a 1)
-        ay (aget a 2)
-        bx (aget b 1)
-        by (aget b 2)
-        angle-a (js/Math.atan2 (- ay sy) (- ax sx))
-        angle-b (js/Math.atan2 (- by sy) (- bx sx))
-        diff (js/Math.abs (- angle-a angle-b))]
-  (min diff (- (* 2 js/Math.PI) diff))))
-
 (defn find-impacts [centre lines targets]
   (let [sx (aget centre 0)
         sy (aget centre 1)
@@ -150,15 +138,11 @@
       (aset absorbs id 0))
     (areduce impacts i _ nil
              (let [impact0 (aget impacts i)
-                   id0 (aget impact0 0)
-                   x0 (aget impact0 3)
-                   y0 (aget impact0 4)
                    impact1 (aget impacts (mod (+ i 1) (alength impacts)))
-                   id1 (aget impact1 0)
-                   x1 (aget impact1 3)
-                   y1 (aget impact1 4)]
+                   id0 (aget impact0 0)
+                   id1 (aget impact1 0)]
                (when (and (>= id0 0) (== id0 id1))
-                 (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun (array id0 x0 y0) (array id1 x1 y1)))))))
+                 (aset absorbs id0 (+ (aget absorbs id0) 1)))))
     {:absorbs absorbs
      :impacts impacts
      :lines lines
@@ -193,18 +177,18 @@
     (areduce lines i _ nil
              (let [line (aget lines i)]
                (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
+    (q/fill 0)
+    (q/stroke 0)
+    (q/ellipse (sun 0) (sun 1) 20 20)
     (q/stroke 255 0 0)
     (q/fill 255 0 0)
     (areduce lines i _ nil
              (let [line (aget lines i)
                    id (aget line 0)
                    absorb (aget absorbs id)
-                   brightness (* absorb (/ 10 js/Math.PI))]
-               (q/ellipse x0 y0 brightness brightness)
-               (q/ellipse x1 y1 brightness brightness)))
-    (q/fill 0)
-    (q/stroke 0)
-    (q/ellipse (sun 0) (sun 1) 20 20)
+                   brightness (/ absorb 100)]
+               (q/ellipse (aget line 1) (aget line 2) brightness brightness)
+               (q/ellipse (aget line 3) (aget line 4) brightness brightness)))
     absorbs))
 
 (defn setup []
