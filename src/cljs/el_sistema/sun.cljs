@@ -178,36 +178,33 @@
        [[[x0 y0] [x1 y1]]]))))
 
 (defn draw [sun trees width height]
-  (let [{absorbs :absorbs impacts :impacts points :points} (calculate-sunlight sun trees width height)]
+  (let [{absorbs :absorbs impacts :impacts lines :lines points :points} (calculate-sunlight sun trees width height)]
     (println "drawing at" (q/current-frame-rate))
     (q/background 255)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
-;;     (doseq [i (range (alength impacts))]
-;;       (let [[_ _ _ x0 y0] (aget impacts i)
-;;             [_ _ _ x1 y1] (aget impacts (mod (+ i 1) (alength impacts)))]
-;;         (q/triangle (sun 0) (sun 1) x0 y0 x1 y1)))
     (q/stroke 0)
     (q/fill 0)
-    (doseq [i (range (alength impacts))]
-      (let [[_ _ _ x y] (aget impacts i)]
-        (q/line (sun 0) (sun 1) x y)))
+    (let [[sx sy] sun]
+      (areduce impacts i _ nil
+               (let [impact (aget impacts i)]
+                 (q/line sx sy (aget impact 3) (aget impact 4)))))
+    (q/stroke 0 255 0)
+    (areduce lines i _ nil
+             (let [line (aget lines i)]
+               (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
+    (q/stroke 255 0 0)
+    (q/fill 255 0 0)
+    (areduce lines i _ nil
+             (let [line (aget lines i)
+                   id (aget line 0)
+                   absorb (aget absorbs id)
+                   brightness (* absorb (/ 10 js/Math.PI))]
+               (q/ellipse x0 y0 brightness brightness)
+               (q/ellipse x1 y1 brightness brightness)))
     (q/fill 0)
     (q/stroke 0)
-    (q/ellipse (sun 0) (sun 1) 10 10)
-    (doseq [[tree id] (map vector trees (range))
-            [[x0 y0] [x1 y1]] tree]
-      (let [absorb (aget absorbs id)
-            brightness (* absorb (/ 10 js/Math.PI))]
-        (q/stroke 0 255 0)
-        (q/line x0 y0 x1 y1)
-        (q/stroke 255 0 0)
-        (q/fill 255 0 0)
-        (q/ellipse x0 y0 brightness brightness)
-        (q/ellipse x1 y1 brightness brightness)))
-    (q/stroke 0 0 0)
-    (doseq [[_ x0 y0 x1 y1] edges]
-      (q/line x0 y0 x1 y1))
+    (q/ellipse (sun 0) (sun 1) 20 20)
     absorbs))
 
 (defn setup []
