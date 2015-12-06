@@ -125,7 +125,7 @@
     (println "PRINTING!!! " (count nsegs))
     (doseq [[start stop] nsegs]
       (q/line start stop)))
-  (sun/draw [(q/mouse-x) (q/mouse-y)] nsegs 600 400)
+  (sun/draw [(q/mouse-x) (q/mouse-y)] [nsegs] 600 400)
   (swap! depth inc))
 
 (defn setup []
