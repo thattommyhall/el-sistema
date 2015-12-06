@@ -105,8 +105,9 @@
 
 (println "blah!!")
 (def sample-genome (logic/parse-genome-string "(genome
-                                                  (rule (< length 20)  => (grow 5))
-                                                  (rule (>= length 20) => (branch -60 +60)))"))
+                                                  (rule (< length 50)  => (grow 10))
+                                                  (rule (>= length 50) => (branch +10 -10))
+                                                  )"))
 
 (defn print-plant-string [plant] (println "PLANT:" (logic/plant->string plant)) plant)
 (defn print-plant-energy [plant] (println "ENERGY:" (:energy plant)) plant)
@@ -152,5 +153,5 @@
   :size [600 400]
   )
 
-(println "NOW!!!")
-(println (segs 50))
+;(println "NOW!!!")
+;(println (segs 50))
