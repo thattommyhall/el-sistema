@@ -201,7 +201,7 @@
                    id (get line 0)]
                (when (>= id 0)
                  (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4)))))
-    (q/tint 255 255 100 220)
+    (q/tint 255 255 100 200)
     (q/image (q/state :light) 0 0)
     (q/fill 255)
     (q/stroke 255)
