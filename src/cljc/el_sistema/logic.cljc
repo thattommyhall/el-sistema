@@ -33,9 +33,10 @@
 (def branching-consumed-length 5)
 
 (defn compute-energy-cost [height]
-  ;(Math/pow 1.1 height)
-  ;(* 0.2 height)
-  (* (* 0.1 height) (* 0.1 height)))
+  ;;(Math/pow 1.1 height)
+  ;;(* 0.2 height)
+  (* 0.01
+      (* height height)))
 
 ;; condition and actions
 
@@ -191,10 +192,10 @@
 
 (defn plant->segs
   ([x plant]
-   (println plant)
+   ;; (println plant)
    (plant->segs (:branch plant)
                 [x (:length (:branch plant)) (->rad 0)]
-                []))
+                [[[x 0] [x (:length (:branch plant))]]]))
   ([{:keys [angle children length]} [x y tree-angle :as position] accum]
    (let [[_ _ anglep] (rotate position angle)
          [xp yp _ ] (move [x y anglep] length)

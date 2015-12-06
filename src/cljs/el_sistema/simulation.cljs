@@ -5,27 +5,13 @@
 (defrecord Garden [plants size])
 
 (defn seed-garden [garden genomes]
-  (let [plant-area (/ (:size garden) (count genomes))
-        ]
-    ;; (println plant-area)
+  (let [plant-area (/ (:size garden) (count genomes))]
     (assoc garden
            :plants
-           [(assoc (logic/seed (first genomes)) :x 200)
-            (assoc (logic/seed (second genomes)) :x 400)
-            ]
-           #_(loop [x 0
-                  genomes genomes
-                  plants []]
-             (if (seq genomes)
-               (let [new-x (+ x plant-area)
-                     plant-x (/ new-x 2)
-                     new-plant
-                     new-plant (assoc new-plant :x plant-x)]
-                 (recur new-x
-                        (rest genomes)
-                        (cons new-plant plants)))
-               (assoc garden :plants (reverse plants))))
-           )))
+           (map (fn [genome x-val]
+                  (assoc (logic/seed genome) :x x-val))
+                genomes
+                (iterate #(+ plant-area %) (/ plant-area 2))))))
 
 (defn make-garden [size genomes]
   (-> (map->Garden {:size size})
@@ -39,7 +25,6 @@
   (map #(* (:absorb %) total-energy ) plants))
 
 (defn evolve-garden [{:keys [plants] :as garden} absorbs]
-  (println "plants to e-g: " (count plants))
   (let [next-energy-amount 100
         ;; _ (println next-energy-amount)
         garden (assoc garden :plants (update-absorbs plants absorbs))

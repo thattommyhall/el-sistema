@@ -58,7 +58,7 @@
   ;; (println plant)
   (->> plant
        ;(print-plant-string)
-       ;; (print-plant-energy)
+       (print-plant-energy)
        (print-plant-segments)
        (logic/plant->segs (:x plant))))
 
@@ -68,10 +68,10 @@
   (q/stroke-float 0)
                                         ; drawing the plants
   ;; (println  (:plants @garden))
-  ;; (println "count" (count (:plants @garden) ))
+  (println "count" (count (:plants @garden) ))
   (let [plants-segs (map segs (:plants @garden))
         _ (println "num plant: " (count  (:plants @garden)))
-        ;; _ (println "segs" plants-segs)
+        _ (println "num segs" (count  plants-segs))
         absorbs (sun/draw [300 400] plants-segs garden-width 400)
         _ (println "absorbs: " absorbs)
         next-garden (simulation/evolve-garden @garden absorbs)]
@@ -80,11 +80,8 @@
 
 
 (defn setup []
-  (q/frame-rate 30)
   (q/color-mode :rgb)
-  (q/frame-rate 10)
-  ;; (q/color-mode :rgb)
-  )
+  (q/frame-rate 1))
 
 
 (q/defsketch hello
