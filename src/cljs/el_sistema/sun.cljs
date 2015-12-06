@@ -164,21 +164,22 @@
 (defn draw [sun trees width height]
   (let [{absorbs :absorbs impacts :impacts lines :lines points :points} (calculate-sunlight sun trees width height)]
     (println "drawing at" (q/current-frame-rate))
-    (q/background 255)
+    (q/background 0)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
-    (q/stroke 0)
-    (q/fill 0)
+    (q/stroke 255 255 0 10)
+    (q/fill 255 255 0 10)
     (let [[sx sy] sun]
       (areduce impacts i _ nil
-               (let [impact (aget impacts i)]
-                 (q/line sx sy (aget impact 3) (aget impact 4)))))
+               (let [impact0 (aget impacts i)
+                     impact1 (aget impacts (mod (+ i 1) (alength impacts)))]
+                 (q/triangle sx sy (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4)))))
     (q/stroke 0 255 0)
     (areduce lines i _ nil
              (let [line (aget lines i)]
                (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
-    (q/fill 0)
-    (q/stroke 0)
+    (q/fill 255)
+    (q/stroke 255)
     (q/ellipse (sun 0) (sun 1) 20 20)
     (q/stroke 255 0 0)
     (q/fill 255 0 0)
