@@ -1,4 +1,5 @@
-(ns el-sistema.logic)
+(ns el-sistema.logic
+  (:require [cljs.reader :refer [read-string]]))
 
 ; Plant
 
@@ -70,14 +71,14 @@
 ;;; parsing functions
 
 (defn parse-float [value]
-  (Float/parseFloat (str value)))
+  (js/parseFloat (str value)))
 
 (defn parse-target [target]
   (condp = target
     'length :length
     'angle :angle
     'height :height
-    (throw (Exception. (str "Invalid target: " target)))))
+    (throw (js/Error. (str "Invalid target: " target)))))
 
 (defn parse-operator [operator]
   (condp = operator
@@ -87,7 +88,7 @@
     '>= >=
     '<= <=
     'not= not=
-    (throw (Exception. (str "Invalid operator: " operator)))))
+    (throw (js/Error. (str "Invalid operator: " operator)))))
 
 (defn parse-single-condition
   "(op length|angle float)"
@@ -106,17 +107,17 @@
       'true   (fn [_branch _height] true)
       'false  (fn [_branch _height] false)
       (parse-single-condition conditions))
-    (throw (Exception. (str "Invalid condition: " conditions)))))
+    (throw (js/Error. (str "Invalid condition: " conditions)))))
 
 (defn parse-branch-action [angle]
   (let [angle-str (str angle)]
-    (Float/parseFloat angle-str)))
+    (parse-float angle-str)))
 
 (defn parse-action [[action-name & action-body]]
   (condp = action-name
     'grow (make-grow-action (parse-float (first action-body)))
     'branch (make-branch-action (map parse-branch-action action-body))
-    (throw (Exception. (str "Invalid action: " action-name)))))
+    (throw (js/Error. (str "Invalid action: " action-name)))))
 
 (defn parse-rule [rule]
   (let [[_ conditions _ action] rule
@@ -130,6 +131,9 @@
 (defn parse-genome [genome]
   (let [[_ & rules] genome]
     (parse-rules rules)))
+
+(defn parse-genome-string [genome-string]
+  (->> genome-string (read-string) (parse-genome)))
 
 (defn seed [genome] (map->Plant {:genome genome
                                  :branch (map->Branch {:angle (->rad 90), :height 0, :length 0, :children []})
@@ -180,8 +184,8 @@
     (-> plant (assoc :branch new-branch) (assoc :energy remaining-energy))))
 ;;;
 
-(defn Plant->segs
- ([plant x] (Plant->segs (:branch plant) [x 0 (->rad 90)] []))
+(defn plant->segs
+ ([x plant] (plant->segs (:branch plant) [x 0 (->rad 90)] []))
  ([{:keys [angle children]} [x y _ :as position] accum]
   (let [[_ _ anglep] (rotate position angle)
         [xp yp _ ] (move position anglep)
@@ -190,22 +194,22 @@
            accum (conj accum segment)]
       (if (seq children)
         (recur (rest children)
-               (Plant->segs (first children) [xp yp anglep] accum))
+               (plant->segs (first children) [xp yp anglep] accum))
         accum)))))
 
-(defn Plant->string
+(defn plant->string
   ([plant]
    (letfn [(branch->string [branch]
              (let [acc (str "F_" (:length branch))
-                   children_acc (map #(str "[+" (Math/round (->degrees (:angle %))) (Plant->string {:branch %}) "]") (:children branch))]
+                   children_acc (map #(str "[+" (Math/round (->degrees (:angle %))) (plant->string {:branch %}) "]") (:children branch))]
                (str acc (apply str children_acc))))]
      (branch->string (:branch plant)))))
 
 ;;;;
 
-(def sample-genome (parse-genome (read-string "(genome
-                                                (rule (< length 10) => (grow 1))
-                                                (rule (>= length 10) => (branch -60 +60)))")))
-
-(doseq [plant (take 190 (iterate (partial evolve-plant 20) (seed sample-genome)))]
-  (println "ENERGY " (:energy plant) " -> " (Plant->string plant)))
+;(def sample-genome (parse-genome-string "(genome
+;                                           (rule (< length 10)  => (grow 1))
+;                                           (rule (>= length 10) => (branch -60 +60)))"))
+;
+;(doseq [plant (take 190 (iterate (partial evolve-plant 20) (seed sample-genome)))]
+;  (println "ENERGY " (:energy plant) " -> " (plant->string plant)))

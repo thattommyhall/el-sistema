@@ -1,14 +1,15 @@
 (ns el-sistema.core
   (:require [clojure.browser.repl :as repl]
             [matchbox.core :as m]
-            [quil.core :as q :include-macros true]))
+            [quil.core :as q :include-macros true]
+            [el-sistema.logic :as logic]))
 
 
 (enable-console-print!)
 (println "TOM TEST ")
 
-;; (defonce conn
-;;   (repl/connect "http://localhost:9000/repl"))
+(defonce conn
+  (repl/connect "http://localhost:9000/repl"))
 
 
 (defn move [[x y angle] units]
@@ -101,12 +102,25 @@
 
 (def depth (atom 0))
 
+(println "blah!!")
+(def sample-genome (logic/parse-genome-string "(genome
+                                                  (rule (< length 10)  => (grow 1))
+                                                  (rule (>= length 10) => (branch -60 +60)))"))
+
+(defn segs [n]
+  (println "INVOKING SEGS " n)
+  (->> (iterate (partial logic/evolve-plant 20) (logic/seed sample-genome))
+       (take n)
+       (last) ; last iteration
+       (logic/plant->segs 100)))
+
 (defn draw []
   ;; (println segs)
   (q/background 100)
   ;; (q/fill 0)
   (q/stroke-float 0)
   (let [nsegs (segs @depth)]
+    (println "PRINTING!!! " (count nsegs))
     (doseq [[start stop] nsegs]
       (q/line start stop)))
   (swap! depth inc))
@@ -117,9 +131,11 @@
   )
 
 
-(q/defsketch hello
-  :setup setup
-  :draw draw
-  :host "tree"
-  :size [600 400]
-  )
+;(q/defsketch hello
+;  :setup setup
+;  :draw draw
+;  :host "tree"
+;  :size [600 400]
+;  )
+
+(println (segs 500))
