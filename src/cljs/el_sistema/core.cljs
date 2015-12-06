@@ -80,8 +80,10 @@
 
 
 (defn setup []
+  (q/smooth 0)
+  (q/frame-rate 30)
   (q/color-mode :rgb)
-  (q/frame-rate 1))
+  (q/set-state! :light (q/create-graphics 500 500)))
 
 
 (q/defsketch hello

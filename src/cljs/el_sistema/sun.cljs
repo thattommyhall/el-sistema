@@ -174,27 +174,26 @@
     (println "drawing at" (q/current-frame-rate))
     (q/background 0)
     (let [[sx sy] sun]
-      (dotimes [a max-absorbs]
-        (q/fill 255 255 100 (/ 255 (js/Math.pow absorb-rate a)))
-        (q/no-stroke 255)
-        (let [impacts-prev (aget impacts (- a 1))
-              impacts (aget impacts a)]
-          (if (== a 0)
-            (do
-              (q/begin-shape)
-              (areduce impacts i _ nil
-                       (let [impact (aget impacts i)]
-                         (q/vertex (aget impact 3) (aget impact 4))))
-              (q/end-shape))
-            (do
-              (q/begin-shape)
-              (areduce impacts-prev i _ nil
-                       (let [impact (aget impacts-prev i)]
-                         (q/vertex (aget impact 3) (aget impact 4))))
-              (areduce impacts i _ nil
-                       (let [impact (aget impacts i)]
-                         (q/vertex (aget impact 3) (aget impact 4))))
-              (q/end-shape))))))
+      (q/with-graphics (q/state :light)
+        (q/background 0)
+        (dotimes [a max-absorbs]
+          (let [a (- max-absorbs 1 a)
+                impacts (aget impacts a)]
+            (q/fill (/ 255 (js/Math.pow absorb-rate a)))
+            (q/stroke (/ 255 (js/Math.pow absorb-rate a)))
+            (if (== a 0)
+              (do
+                (q/begin-shape)
+                (areduce impacts i _ nil
+                         (let [impact (aget impacts i)]
+                           (q/vertex (aget impact 3) (aget impact 4))))
+                (q/end-shape))
+              (do
+                (q/begin-shape)
+                (areduce impacts i _ nil
+                         (let [impact (aget impacts i)]
+                           (q/vertex (aget impact 3) (aget impact 4))))
+                (q/end-shape)))))))
     (q/stroke 0 255 0)
     (areduce lines i _ nil
              (let [line (aget lines i)]
@@ -211,12 +210,15 @@
                    brightness (/ absorb 100)]
                (q/ellipse (aget line 1) (aget line 2) brightness brightness)
                (q/ellipse (aget line 3) (aget line 4) brightness brightness)))
+    (q/tint 200 200 100 220)
+    (q/image (q/state :light) 0 0)
     absorbs))
 
 (defn setup []
-  (q/smooth 8)
+  (q/smooth 0)
   (q/frame-rate 30)
-  (q/color-mode :rgb))
+  (q/color-mode :rgb)
+  (q/set-state! :light (q/create-graphics 500 500)))
 
 ;; (q/defsketch sketch
 ;;   :setup setup
