@@ -83,7 +83,7 @@
   (q/smooth 0)
   (q/frame-rate 30)
   (q/color-mode :rgb)
-  (q/set-state! :light (q/create-graphics 500 500)))
+  (q/set-state! :light (q/create-graphics garden-width 400)))
 
 
 (q/defsketch hello
