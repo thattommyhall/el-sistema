@@ -107,7 +107,7 @@
   (let [[sx sy] sun
         lines (vec (concat
                     (for [[tree id] (map vector trees (range))
-                         [x0 y0 x1 y1] tree]
+                         [[x0 y0] [x1 y1]] tree]
                       [id x0 y0 x1 y1])
                     [[-1 0 0 width 0]
                      [-1 width 0 width height]
@@ -154,11 +154,10 @@
 (def trees
   (vec
    (for [_ (range 10)]
-    [[(rand-int 500) (rand-int 500) (rand-int 500) (rand-int 500)]])))
+    [[[(rand-int 500) (rand-int 500)] [(rand-int 500) (rand-int 500)]]])))
 
-(defn draw []
-  (let [sun [(q/mouse-x) (q/mouse-y)]
-        {absorbs :absorbs impacts :impacts} (calculate-sunlight sun trees 500 500)]
+(defn draw [sun trees width height]
+  (let [{absorbs :absorbs impacts :impacts} (calculate-sunlight sun trees width height)]
     (println "drawing at" (q/current-frame-rate))
     (q/background 255)
     (q/fill 255 255 0)
@@ -171,7 +170,7 @@
     (q/stroke 0)
     (q/ellipse (sun 0) (sun 1) 10 10)
     (doseq [[tree id] (map vector trees (range))
-            [x0 y0 x1 y1] tree]
+            [[x0 y0] [x1 y1]] tree]
       (let [absorb (aget absorbs id)
             brightness (* absorb (/ 10 js/Math.PI))]
         (q/stroke 0 255 0)
@@ -189,8 +188,8 @@
   (q/frame-rate 30)
   (q/color-mode :rgb))
 
-(q/defsketch sketch
-  :setup setup
-  :size [501 501]
-  :draw draw
-  :host "screen")
+;; (q/defsketch sketch
+;;   :setup setup
+;;   :size [501 501]
+;;   :draw #(draw [(q/mouse-x) (q/mouse-y)] trees 500 500)
+;;   :host "screen")

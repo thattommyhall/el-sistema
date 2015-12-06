@@ -2,7 +2,8 @@
   (:require [clojure.browser.repl :as repl]
             [matchbox.core :as m]
             [quil.core :as q :include-macros true]
-            [el-sistema.logic :as logic]))
+            [el-sistema.logic :as logic]
+            [el-sistema.sun :as sun]))
 
 
 (enable-console-print!)
@@ -120,22 +121,24 @@
   ;; (q/fill 0)
   (q/stroke-float 0)
   (let [nsegs (segs @depth)]
+    (println nsegs)
     (println "PRINTING!!! " (count nsegs))
     (doseq [[start stop] nsegs]
       (q/line start stop)))
+  (sun/draw [(q/mouse-x) (q/mouse-y)] nsegs 600 400)
   (swap! depth inc))
 
 (defn setup []
   (q/frame-rate 30)
-  ;; (q/color-mode :rgb)
+  (q/color-mode :rgb)
   )
 
 
-;(q/defsketch hello
-;  :setup setup
-;  :draw draw
-;  :host "tree"
-;  :size [600 400]
-;  )
+(q/defsketch hello
+  :setup setup
+  :draw draw
+  :host "tree"
+  :size [600 400]
+  )
 
 (println (segs 500))
