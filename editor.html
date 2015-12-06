@@ -56,7 +56,7 @@
          var savePlant = function(name, author, genome) {
              var myFirebaseRef = new Firebase("https://el-sistema.firebaseio.com/plants");
 
-             return myFirebaseRef.set({
+             return myFirebaseRef.push({
                  genome: genome,
                  name: name,
                  author: author
@@ -64,13 +64,12 @@
                  if(error) {
                      alert("Error saving plant: "+error);
                  } else {
-                     alert("Plant "+plantName+" created");
+                     alert("Plant "+name+" created");
                  }
              });
          };
 
          $("#editor-form").on('submit',function(e) {
-             debugger;
              var genome = myCodeMirror.getValue();
              var hasError = false;
              try {
@@ -102,7 +101,9 @@
                  $("#mandatory-fields-error").show();
              }
 
-             savePlant(plantName, author, genome));
+             if(hasError === false) {
+                 savePlant(plantName, author, genome);
+             }
 
              e.preventDefault();
              return false;
