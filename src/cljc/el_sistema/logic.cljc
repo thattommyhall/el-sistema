@@ -8,6 +8,7 @@
 
 (defrecord Plant [genome branch energy x])
 
+
 ;; Aux functions
 (defn ->rad [degrees]
   (* (/ degrees 360)
@@ -211,10 +212,10 @@
 
 ;;;;
 
-(def sample-genome (parse-genome (read-string "(genome
-                                                (rule (< length 50) => (grow 10))
-                                                (rule (>= length 50) => (branch -45 +45)))")))
-
-(doseq [plant (take 190 (iterate (partial evolve-plant 20) (seed sample-genome)))]
-  (println "ENERGY " (:energy plant) " -> " (plant->string plant))
-  (println "SEGMENTS " (plant->segs 100 plant)))
+;(def sample-genome (parse-genome (read-string "(genome
+;                                                (rule (< length 50) => (grow 10))
+;                                                (rule (>= length 50) => (branch -45 +45)))")))
+;
+;(doseq [plant (take 190 (iterate (partial evolve-plant 20) (seed sample-genome)))]
+;  (println "ENERGY " (:energy plant) " -> " (plant->string plant))
+;  (println "SEGMENTS " (plant->segs 100 plant)))
