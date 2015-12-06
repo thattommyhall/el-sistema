@@ -39,15 +39,16 @@
                             <textarea id="plant-genome" class="form-control">
 ;; example plant genome
 (genome
- ; this should be a list of rules (conditions => actions)
- ; possible conditions are (predicate target value) where:
- ;   - predicate: < > <= >= == not=
- ;   - target: length, angle, height
- ;   - value: float
- ; possible actions are (grow length) and (branch +angle -angle +angle ...)
- ; Rules execution is attempted in specification order
- (rule condition1 => action1)
- (rule condition2 => action2)
+  ; this should be a list of rules (conditions => actions)
+  ; possible conditions are (predicate target value) where:
+  ;   - predicate: < > <= >= == not=
+  ;   - target: length, angle, height
+  ;   - value: float
+  ; possible actions are (grow length) and (branch +angle -angle +angle ...)
+  ; Rules execution is attempted in specification order
+  (rule (< length 10)  => (grow 1))
+  (rule (>= length 10) => (branch -60 +60))
+)
  ...
 )</textarea>
                             <p id="genome-error" class="bg-danger" style="display:none"></p>
