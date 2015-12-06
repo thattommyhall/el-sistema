@@ -16,7 +16,7 @@ genomes = {
 });
 
 function clickedRun() {
-  var genome = $("#genomeselect").find(":selected").val();
-  console.log(genome)
-  el_sistema.core.run(genome, genome);
-}
+    var genome = $("#genomeselect").find(":selected").val();
+    console.log(genome)
+    el_sistema.core.run(genome, genome);
+};
