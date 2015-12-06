@@ -61,12 +61,16 @@
         (when (< i (alength array))
           (aset array i last))))))
 
+(def num-rays 1000)
+(def max-absorbs 5)
+(def absorb-rate 2)
+
 (defn find-impacts [centre lines targets]
   (let [sx (aget centre 0)
         sy (aget centre 1)
         max-angle js/Math.PI
-        inc-angle (/ max-angle 1000)
-        impacts (array)
+        inc-angle (/ max-angle num-rays)
+        impacts (into-array (for [_ (range max-absorbs)] (array)))
         lines-in-sight (array)]
     (areduce targets ix _ nil
              (let [target (aget targets ix)
@@ -87,15 +91,16 @@
                  (.push lines-in-sight (aget target 3))
                  (array-remove lines-in-sight (aget target 3)))
               (recur angle (+ ix 1)))
-            (let [aim (array (+ sx (js/Math.cos angle)) (+ sy (js/Math.sin angle)))]
-              (.push impacts
-                     (areduce lines-in-sight ix closest (array -1 0 js/Number.POSITIVE_INFINITY sx sy)
-                              (let [line (aget lines (aget lines-in-sight ix))]
-                                (if-let [impact (ray-intersection centre aim line)]
-                                  (if (< (aget impact 2) (aget closest 2))
-                                    impact
-                                    closest)
-                                  closest))))
+            (let [aim (array (+ sx (js/Math.cos angle)) (+ sy (js/Math.sin angle)))
+                  impacts-here (array)]
+              (areduce lines-in-sight ix _ nil
+                       (let [line (aget lines (aget lines-in-sight ix))]
+                         (when-let [impact (ray-intersection centre aim line)]
+                           (.push impacts-here impact))))
+              (goog.array/sort impacts-here (fn [a b] (goog.array/defaultCompare (aget a 2) (aget b 2))))
+              (when (> (alength impacts-here) 0) ; TODO why do rays ever miss the edges?
+                (dotimes [ix max-absorbs]
+                  (.push (aget impacts ix) (aget impacts-here (min ix (- (alength impacts-here) 1))))))
               (recur (+ angle inc-angle) ix))))))
     impacts))
 
@@ -136,13 +141,16 @@
         absorbs (make-array (count trees))]
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
-    (areduce impacts i _ nil
-             (let [impact0 (aget impacts i)
-                   impact1 (aget impacts (mod (+ i 1) (alength impacts)))
-                   id0 (aget impact0 0)
-                   id1 (aget impact1 0)]
-               (when (and (>= id0 0) (== id0 id1))
-                 (aset absorbs id0 (+ (aget absorbs id0) 1)))))
+    (dotimes [a max-absorbs
+              absorb (/ 1 (js/Math.pow absorb-rate a))]
+      (let [impacts (aget impacts a)]
+        (areduce impacts i _ nil
+                 (let [impact0 (aget impacts i)
+                       impact1 (aget impacts (mod (+ i 1) (alength impacts)))
+                       id0 (aget impact0 0)
+                       id1 (aget impact1 0)]
+                   (when (and (>= id0 0) (== id0 id1))
+                     (aset absorbs id0 (+ (aget absorbs id0) absorb)))))))
     {:absorbs absorbs
      :impacts impacts
      :lines lines
@@ -154,26 +162,35 @@
 
 (def trees
   (vec
-   (for [_ (range 1000)]
+   (for [_ (range 100)]
      (let [x0 (+ 100 (rand-int 300))
            y0 (+ 100 (rand-int 300))
-           x1 (+ x0 -10 (rand-int 20))
-           y1 (+ y0 -10 (rand-int 20))]
+           x1 (+ x0 -100 (rand-int 200))
+           y1 (+ y0 -100 (rand-int 200))]
        [[[x0 y0] [x1 y1]]]))))
 
 (defn draw [sun trees width height]
   (let [{absorbs :absorbs impacts :impacts lines :lines points :points} (calculate-sunlight sun trees width height)]
     (println "drawing at" (q/current-frame-rate))
     (q/background 0)
-    (q/fill 255 255 0)
-    (q/stroke 255 255 0)
-    (q/stroke 255 255 0 10)
-    (q/fill 255 255 0 10)
     (let [[sx sy] sun]
-      (areduce impacts i _ nil
-               (let [impact0 (aget impacts i)
-                     impact1 (aget impacts (mod (+ i 1) (alength impacts)))]
-                 (q/triangle sx sy (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4)))))
+      (dotimes [a max-absorbs]
+        (q/fill 255 255 100 (/ 255 (js/Math.pow absorb-rate a)))
+        (q/no-stroke 255)
+        (let [impacts-prev (aget impacts (- a 1))
+              impacts (aget impacts a)]
+          (if (== a 0)
+            (areduce impacts i _ nil
+                     (let [impact0 (aget impacts i)
+                           impact1 (aget impacts (mod (+ i 1) (alength impacts)))]
+                       (q/triangle sx sy (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4))))
+            (areduce impacts i _ nil
+                     (let [impact0 (aget impacts i)
+                           impact1 (aget impacts (mod (+ i 1) (alength impacts)))
+                           impact2 (aget impacts-prev (mod (+ i 1) (alength impacts)))
+                           impact3 (aget impacts-prev i)]
+                       (q/quad (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4)
+                               (aget impact2 3) (aget impact2 4) (aget impact3 3) (aget impact3 4))))))))
     (q/stroke 0 255 0)
     (areduce lines i _ nil
              (let [line (aget lines i)]
