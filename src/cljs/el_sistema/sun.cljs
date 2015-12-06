@@ -59,15 +59,14 @@
         (array s t ix iy)))))
 
 (defn closest-intersection [ray-from ray-to lines]
-  (reduce
-   (fn [closest line]
-     (if-let [impact (ray-intersection ray-from ray-to line)]
-       (if (< (aget impact 1) (aget closest 2))
-         (array (aget line 0) (aget impact 0) (aget impact 1) (aget impact 2) (aget impact 3))
-         closest)
-       closest))
-   (array -1 0 js/Number.POSITIVE_INFINITY (aget ray-to 0) (aget ray-to 1))
-   lines))
+  (array-reduce lines
+                (fn [closest line]
+                  (if-let [impact (ray-intersection ray-from ray-to line)]
+                    (if (< (aget impact 1) (aget closest 2))
+                      (array (aget line 0) (aget impact 0) (aget impact 1) (aget impact 2) (aget impact 3))
+                      closest)
+                    closest))
+                (array -1 0 js/Number.POSITIVE_INFINITY (aget ray-to 0) (aget ray-to 1))))
 
 (defn rotate [angle [sx sy] [x y]]
   (let [a (q/cos angle)
@@ -119,19 +118,23 @@
 
 (defn calculate-sunlight [sun trees width height]
   (let [sun (into-array sun)
-        lines (vec (concat
-                    (for [[tree id] (map vector trees (range))
-                         [[x0 y0] [x1 y1]] tree]
-                      (array id x0 y0 x1 y1))
-                    [(array -1 0 0 width 0)
-                     (array -1 width 0 width height)
-                     (array -1 width height 0 height)
-                     (array -1 0 height 0 0)]))
-        intersections (vec
-                       (filter identity
-                               (for [line0 lines
-                                     line1 lines]
-                                 (line-intersection line0 line1))))
+        lines (into-array (concat
+                           (for [[tree id] (map vector trees (range))
+                                 [[x0 y0] [x1 y1]] tree]
+                             (array id x0 y0 x1 y1))
+                           [(array -1 0 0 width 0)
+                            (array -1 width 0 width height)
+                            (array -1 width height 0 height)
+                            (array -1 0 height 0 0)]))
+        intersections (array-reduce lines
+                                    (fn [acc line0]
+                                      (array-reduce lines
+                                       (fn [acc line1]
+                                         (when-let [intersection (line-intersection line0 line1)]
+                                           (.push acc intersection))
+                                         acc)
+                                       acc))
+                                    (array))
         points (vec
                 (concat
                  (for [[_ _ x y] intersections]
@@ -146,21 +149,23 @@
                     (rotate 0.0001 sun point))
                   (for [point points]
                     (rotate -0.0001 sun point))))
-        impacts (vec
+        impacts (into-array
                  (for [target targets]
                    (let [[id _ _ x y] (closest-intersection sun target lines)]
                      (array id x y))))
-        sorted-impacts (sort-by-angle sun impacts)
         absorbs (make-array (count trees))]
+    (println (aget impacts 0))
+    (sort-by-angle sun impacts)
+    (println (aget impacts 0))
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
-    (doseq [i (range (count sorted-impacts))]
-      (let [[id0 x0 y0] (sorted-impacts i)
-            [id1 x1 y1] (sorted-impacts (mod (+ i 1) (count sorted-impacts)))]
+    (doseq [i (range (alength impacts))]
+      (let [[id0 x0 y0] (aget impacts i)
+            [id1 x1 y1] (aget impacts (mod (+ i 1) (alength impacts)))]
         (when (and (>= id0 0) (== id0 id1))
           (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun [id0 x0 y0] [id1 x1 y1]))))))
     {:absorbs absorbs
-     :impacts sorted-impacts}))
+     :impacts impacts}))
 
 ;; Rest of file is just for debugging
 
@@ -177,9 +182,9 @@
     (q/background 255)
     (q/fill 255 255 0)
     (q/stroke 255 255 0)
-    (doseq [i (range (count impacts))]
-      (let [[_ x0 y0] (impacts i)
-            [_ x1 y1] (impacts (mod (+ i 1) (count impacts)))]
+    (doseq [i (range (alength impacts))]
+      (let [[_ x0 y0] (aget impacts i)
+            [_ x1 y1] (aget impacts (mod (+ i 1) (alength impacts)))]
         (q/triangle (sun 0) (sun 1) x0 y0 x1 y1)))
     (q/fill 0)
     (q/stroke 0)
