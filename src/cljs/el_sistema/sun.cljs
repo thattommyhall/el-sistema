@@ -114,10 +114,18 @@
 (defn calculate-sunlight [sun trees width height]
   (let [sun (into-array sun)
         [sx sy] sun
+        id (array 0)
         lines (array)
-        _ (doseq [[tree id] (map vector trees (range))
-                  [[x0 y0] [x1 y1]] tree]
-            (.push lines (array id x0 y0 x1 y1)))
+        _ (reduce
+           (fn [_ tree]
+             (reduce
+              (fn [_ [[x0 y0] [x1 y1]]]
+                (.push lines (array (aget id 0) x0 y0 x1 y1)))
+              nil
+              tree)
+             (aset id 0 (+ (aget id 0) 1)))
+           nil
+           trees)
         _ (.push lines (array -1 0 0 width 0))
         _ (.push lines (array -1 width 0 width height))
         _ (.push lines  (array -1 width height 0 height))
@@ -140,13 +148,20 @@
         absorbs (make-array (count trees))]
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
-    (doseq [i (range (alength impacts))]
-      (let [[id0 _ _ x0 y0] (aget impacts i)
-            [id1 _ _ x1 y1] (aget impacts (mod (+ i 1) (alength impacts)))]
-        (when (and (>= id0 0) (== id0 id1))
-          (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun (array id0 x0 y0) (array id1 x1 y1)))))))
+    (areduce impacts i _ nil
+             (let [impact0 (aget impacts i)
+                   id0 (aget impact0 0)
+                   x0 (aget impact0 3)
+                   y0 (aget impact0 4)
+                   impact1 (aget impacts (mod (+ i 1) (alength impacts)))
+                   id1 (aget impact1 0)
+                   x1 (aget impact1 3)
+                   y1 (aget impact1 4)]
+               (when (and (>= id0 0) (== id0 id1))
+                 (aset absorbs id0 (+ (aget absorbs id0) (angle-between sun (array id0 x0 y0) (array id1 x1 y1)))))))
     {:absorbs absorbs
      :impacts impacts
+     :lines lines
      :points points}))
 
 ;; Rest of file is just for debugging
