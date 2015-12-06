@@ -194,16 +194,16 @@
                          (let [impact (aget impacts i)]
                            (q/vertex (aget impact 3) (aget impact 4))))
                 (q/end-shape)))))))
+    (q/stroke 255 0 0)
+    (q/stroke-weight 3)
+    (areduce lines i _ nil
+             (let [line (aget lines i)]
+               (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
     (q/tint 255 255 100 220)
     (q/image (q/state :light) 0 0)
     (q/fill 255)
     (q/stroke 255)
     (q/ellipse (sun 0) (sun 1) 20 20)
-    (q/stroke 255)
-    (q/stroke-weight 3)
-    (areduce lines i _ nil
-             (let [line (aget lines i)]
-               (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
     absorbs))
 
 
