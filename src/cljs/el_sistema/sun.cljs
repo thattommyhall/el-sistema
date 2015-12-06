@@ -141,9 +141,9 @@
         absorbs (make-array (count trees))]
     (doseq [id (range (count trees))]
       (aset absorbs id 0))
-    (dotimes [a max-absorbs
-              absorb (/ 1 (js/Math.pow absorb-rate a))]
-      (let [impacts (aget impacts a)]
+    (dotimes [a max-absorbs]
+      (let [impacts (aget impacts a)
+            absorb (/ 1 (js/Math.pow absorb-rate a))]
         (areduce impacts i _ nil
                  (let [impact0 (aget impacts i)
                        impact1 (aget impacts (mod (+ i 1) (alength impacts)))
@@ -198,9 +198,6 @@
     (areduce lines i _ nil
              (let [line (aget lines i)]
                (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4))))
-    (q/fill 255)
-    (q/stroke 255)
-    (q/ellipse (sun 0) (sun 1) 20 20)
     (q/stroke 255 0 0)
     (q/fill 255 0 0)
     (areduce lines i _ nil
@@ -212,6 +209,9 @@
                (q/ellipse (aget line 3) (aget line 4) brightness brightness)))
     (q/tint 200 200 100 220)
     (q/image (q/state :light) 0 0)
+    (q/fill 255)
+    (q/stroke 255)
+    (q/ellipse (sun 0) (sun 1) 20 20)
     absorbs))
 
 
