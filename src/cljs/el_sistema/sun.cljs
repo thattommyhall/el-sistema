@@ -180,17 +180,21 @@
         (let [impacts-prev (aget impacts (- a 1))
               impacts (aget impacts a)]
           (if (== a 0)
-            (areduce impacts i _ nil
-                     (let [impact0 (aget impacts i)
-                           impact1 (aget impacts (mod (+ i 1) (alength impacts)))]
-                       (q/triangle sx sy (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4))))
-            (areduce impacts i _ nil
-                     (let [impact0 (aget impacts i)
-                           impact1 (aget impacts (mod (+ i 1) (alength impacts)))
-                           impact2 (aget impacts-prev (mod (+ i 1) (alength impacts)))
-                           impact3 (aget impacts-prev i)]
-                       (q/quad (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4)
-                               (aget impact2 3) (aget impact2 4) (aget impact3 3) (aget impact3 4))))))))
+            (do
+              (q/begin-shape)
+              (areduce impacts i _ nil
+                       (let [impact (aget impacts i)]
+                         (q/vertex (aget impact 3) (aget impact 4))))
+              (q/end-shape))
+            (do
+              (q/begin-shape)
+              (areduce impacts-prev i _ nil
+                       (let [impact (aget impacts-prev i)]
+                         (q/vertex (aget impact 3) (aget impact 4))))
+              (areduce impacts i _ nil
+                       (let [impact (aget impacts i)]
+                         (q/vertex (aget impact 3) (aget impact 4))))
+              (q/end-shape))))))
     (q/stroke 0 255 0)
     (areduce lines i _ nil
              (let [line (aget lines i)]
