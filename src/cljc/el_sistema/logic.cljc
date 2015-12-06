@@ -105,17 +105,22 @@
                   (parse-target target)
                   (parse-float value)))
 
+'true
+'false  (fn [_branch _height] false)
+
 (defn parse-conditions
   "(and|or conditions|single-conditions)"
   [conditions]
-  (if (seq conditions)
-    (condp = (first conditions)
-      'and (make-and-condition (map parse-conditions (rest conditions)))
-      'or  (make-or-condition (map parse-conditions (rest conditions)))
-      'true   (fn [_branch _height] true)
-      'false  (fn [_branch _height] false)
-      (parse-single-condition conditions))
-    (throw (#?(:clj Exception. :cljs js/Error.) (str "Invalid condition: " conditions)))))
+  (if (= conditions 'true)
+    (fn [_branch _height] true)
+    (if (= conditions 'false)
+      (fn [_branch _height] false)
+      (if (seq conditions)
+        (condp = (first conditions)
+          'and (make-and-condition (map parse-conditions (rest conditions)))
+          'or  (make-or-condition (map parse-conditions (rest conditions)))
+          (parse-single-condition conditions))
+        (throw (#?(:clj Exception. :cljs js/Error.) (str "Invalid condition: " (doall conditions))))))))
 
 (defn parse-branch-action [angle]
   (let [angle-str (str angle)]
@@ -141,7 +146,7 @@
     (parse-rules rules)))
 
 (defn parse-genome-string [genome-string]
-  (->> genome-string (read-string) (parse-genome)))
+  (->> genome-string (read-string) (parse-genome) doall))
 
 (defn seed [genome] (map->Plant {:genome genome
                                  :branch (map->Branch {:angle (->rad 0), :length 5, :children []})
