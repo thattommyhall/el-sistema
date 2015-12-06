@@ -6,16 +6,11 @@
             [el-sistema.sun :as sun]
             [el-sistema.simulation :as simulation]))
 
-
 (enable-console-print!)
-
-;(defonce conn
-;  (repl/connect "http://localhost:9000/repl"))
 
 
 ;; (defonce conn
 ;;   (repl/connect "http://localhost:9000/repl"))
-
 
 ;; (def root (m/connect "https://el-sistema.firebaseio.com"))
 
