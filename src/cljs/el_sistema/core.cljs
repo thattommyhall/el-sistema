@@ -100,7 +100,7 @@
       (reset! garden next-garden))))
 
 (defn setup []
-  (q/smooth 0)
+  (q/smooth 8)
   (q/frame-rate fps)
   (q/color-mode :rgb)
   (q/set-state! :light (q/create-graphics garden-width 400))

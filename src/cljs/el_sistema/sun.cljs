@@ -94,8 +94,10 @@
             (let [aim (array (+ sx (js/Math.cos angle)) (+ sy (js/Math.sin angle)))
                   impacts-here (array)]
               (areduce lines-in-sight ix _ nil
-                       (let [line (aget lines (aget lines-in-sight ix))]
+                       (let [line-ix (aget lines-in-sight ix)
+                             line (aget lines line-ix)]
                          (when-let [impact (ray-intersection centre aim line)]
+                           (.push impact line-ix)
                            (.push impacts-here impact))))
               (goog.array/sort impacts-here (fn [a b] (goog.array/defaultCompare (aget a 2) (aget b 2))))
               (when (> (alength impacts-here) 0) ; TODO why do rays ever miss the edges?
@@ -174,13 +176,13 @@
     ;; (println "drawing at" (q/current-frame-rate))
     (q/background 0)
     (let [[sx sy] sun]
-      (q/with-graphics (q/state :light)
-        (q/background 0)
+      ;(q/with-graphics (q/state :light)
         (dotimes [a max-absorbs]
           (let [a (- max-absorbs 1 a)
-                impacts (aget impacts a)]
-            (q/fill (/ 255 (js/Math.pow absorb-rate a)))
-            (q/stroke (/ 255 (js/Math.pow absorb-rate a)))
+                impacts (aget impacts a)
+                brightness (/ 255 (js/Math.pow absorb-rate (+ a 1)))]
+            (q/fill brightness)
+            (q/stroke brightness)
             (if (== a 0)
               (do
                 (q/begin-shape)
@@ -193,16 +195,27 @@
                 (areduce impacts i _ nil
                          (let [impact (aget impacts i)]
                            (q/vertex (aget impact 3) (aget impact 4))))
-                (q/end-shape)))))))
-    (q/stroke 255 0 0)
-    (q/stroke-weight 3)
-    (areduce lines i _ nil
-             (let [line (aget lines i)
-                   id (get line 0)]
-               (when (>= id 0)
-                 (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4)))))
-    (q/tint 255 255 100 200)
-    (q/image (q/state :light) 0 0)
+                (q/end-shape))))))
+    (let [[sx sy] sun]
+      ;(q/with-graphics (q/state :light)
+        (dotimes [a max-absorbs]
+          (let [a (- max-absorbs 1 a)
+                impacts (aget impacts a)]
+            (q/stroke 255 255 255 (/ 255 (js/Math.pow absorb-rate a)))
+            (q/fill 255 255 255 (/ 255 (js/Math.pow absorb-rate a)))
+            (areduce impacts i _ nil
+                     (let [impact0 (aget impacts i)
+                           impact1 (aget impacts (mod (+ i 1) (alength impacts)))]
+                       (when (and (== (aget impact0 5) (aget impact1 5)) (not (== (aget impact0 0) -1)))
+                         (q/line (aget impact0 3) (aget impact0 4) (aget impact1 3) (aget impact1 4))))))))
+    ;)
+;;     (areduce lines i _ nil
+;;              (let [line (aget lines i)
+;;                    id (get line 0)]
+;;                (when (>= id 0)
+;;                  (q/line (aget line 1) (aget line 2) (aget line 3) (aget line 4)))))
+    ;(q/tint 255 255 100 200)
+    ;(q/image (q/state :light) 0 0)
     (q/fill 255)
     (q/stroke 255)
     (q/ellipse (sun 0) (sun 1) 20 20)
